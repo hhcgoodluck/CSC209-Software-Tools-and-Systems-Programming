@@ -4,15 +4,15 @@
 // The main function below creates a pipe and uses fork to create a single child process.
 // The pipe will be used to communicate from the child to the parent.
 
-// Part (a) [6 marks]
-// In the code below and on the next page if needed, complete the body of the if statement so that the parent
-// process repeats the following steps NUM_READS times.
-//     1. Monitor the pipe and stdin until at least one is ready for reading.
-//     2. Read in up to BUFSIZE chars from the pipe and/or stdin (whichever are ready for reading) and
-//        then print the text that’s read to stdout. Remember to null-terminate the string before printing.
-
-//     • You may assume that the child process does not close its pipe write end or exit before the parent exits.
-//     • You may assume that the pipe’s file descriptors are > STDIN_FILENO, the file descriptor for stdin.
+/* Part (a) [6 marks]
+   In the code below and on the next page if needed, complete the body of the if statement so that the parent
+   process repeats the following steps NUM_READS times.
+    1. Monitor the pipe and stdin until at least one is ready for reading.
+    2. Read in up to BUFSIZE chars from the pipe and/or stdin (whichever are ready for reading) and
+       then print the text that’s read to stdout. Remember to null-terminate the string before printing.
+    • You may assume that the child process does not close its pipe write end or exit before the parent exits.
+    • You may assume that the pipe’s file descriptors are > STDIN_FILENO, the file descriptor for stdin.
+*/
 
 #include <unistd.h>
 #include <stdio.h>
