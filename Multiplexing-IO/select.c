@@ -101,7 +101,7 @@ int main() {
                 }
             }
         }
-        // could close all the pipes but since program is ending we will just let
+        // could close all the Pipes but since program is ending we will just let
         // them be closed automatically
     }
     return 0;

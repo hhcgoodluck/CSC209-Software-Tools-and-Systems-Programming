@@ -70,7 +70,7 @@ int main() {
                 printf("Read %s from child 2\n", line);
             } 
         }
-        // We could close all the pipes but since program is ending, we will just let
+        // We could close all the Pipes but since program is ending, we will just let
         // them be closed automatically.
     }
     return 0;
