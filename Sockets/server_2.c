@@ -1,3 +1,5 @@
+// Sockets Video 4: Socket Communication
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +15,6 @@ int main() {
         perror("server: socket");
         exit(1);
     }
-
 
     //initialize server address
     struct sockaddr_in server;

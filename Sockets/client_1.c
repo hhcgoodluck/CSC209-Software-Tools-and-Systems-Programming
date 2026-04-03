@@ -1,3 +1,5 @@
+// Sockets Video 3: Setting Up a Connection
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
