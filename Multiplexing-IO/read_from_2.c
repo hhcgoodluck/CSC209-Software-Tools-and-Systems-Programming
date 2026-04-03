@@ -49,8 +49,8 @@ int main() {
         } else {
             close(pipe_child2[1]);
     
-            // This is now the parent with 2 children -- each with a pipe
-            //  from which the parent can read.
+            // This is now the parent with 2 children
+            // each with a pipe from which the parent can read.
 
             // Read first from child 1
             if ((r = read(pipe_child1[0], line, MAXSIZE)) < 0) {
@@ -76,23 +76,25 @@ int main() {
     return 0;
 }
 
+// child1 process performance function
 void handle_child1(int *fd) {
         close(fd[0]);  // we are only writing from child to parent
         printf("[%d] child\n", getpid());
         // Child will write to parent
 
-        // Uncommenting the following while loop will show how child2's written
-        // message can be *blocked* by child1:
+        // Uncommenting the following infinite while loop will show
+        // how child2's written message can be *blocked* by child1:
         
         // while (1) {
         //     // do something
-        // } 
-        
+        // }
 
         char message[10] = "HELLO DAD";
         write(fd[1], message, 10); 
         close(fd[1]);
 }
+
+// child2 process performance function
 void handle_child2(int *fd) {
         close(fd[0]);  // we are only writing from child to parent
         printf("[%d] child\n", getpid());
