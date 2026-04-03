@@ -1,0 +1,9 @@
+# Create a hard link and check if garbage collection preserves the file
+a root
+a dir1 root
+a dir2 root
+a link_target dir1
+h link_target dir2
+r link_target dir1
+p
+g

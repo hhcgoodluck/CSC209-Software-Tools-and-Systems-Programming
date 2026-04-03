@@ -1,0 +1,10 @@
+# Repeatedly remove the head node and check garbage collection
+a 2001
+a 2002
+a 2003
+a 2004
+r 2001
+r 2002
+r 2003
+p
+g

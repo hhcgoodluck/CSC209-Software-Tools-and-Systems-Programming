@@ -1,0 +1,52 @@
+Testing Description
+
+list_test1 - Basic Insertion and Deletion
+Transaction File: list_test1.txt
+Description:
+This test checks whether the garbage collector correctly frees nodes that are no longer reachable after inserting
+multiple nodes into a linked list and removing some of them. It verifies that memory is only freed for
+nodes that are removed, while still-referenced nodes remain intact.
+- Purpose: Ensures that basic insertions and deletions do not cause memory leaks or premature deallocations.
+- Expected Outcome: Removed nodes should be freed, and accessible nodes should still exist in the list after garbage collection.
+
+list_test2 - Repeated Head Deletion
+Transaction File: list_test2.txt
+Description:
+This test repeatedly removes the head node of a linked list to verify that the garbage collector correctly updates
+the `head` pointer and frees the removed nodes. This ensures proper memory management when modifying the list structure.
+- Purpose: Tests the special case of deleting the first element of a linked list, ensuring that the new head is correctly assigned.
+- Expected Outcome: The garbage collector should free all deleted head nodes while maintaining the integrity of the remaining list.
+
+list_test3 - Accessing Freed Nodes (Error Case)
+Transaction File: list_test3.txt
+Description:
+This test attempts to access a deleted node after running garbage collection. If the collector correctly frees
+unreachable nodes, trying to access them should either fail or trigger an error,
+validating the robustness of the garbage collector.
+- Purpose: Ensures that the program does not allow access to memory that has already been freed.
+- Expected Outcome: An error or undefined behavior should occur when attempting to access the freed memory,
+  demonstrating the garbage collector’s effectiveness.
+
+fs_test1 - Hierarchical Directory Deletion
+Transaction File: fs_test1.txt
+Description:
+This test creates a hierarchical file system structure and deletes a subdirectory. The garbage collector
+should correctly free the deleted subdirectory and all its contents while preserving the rest of the tree.
+- Purpose: Ensures that the garbage collector correctly handles directory structures and only deletes nodes that are no longer referenced.
+- Expected Outcome: The deleted directory and its contents should be freed, while the rest of the file system remains unchanged.
+
+fs_test2 - Hard Link Handling
+Transaction File: fs_test2.txt
+Description:
+This test creates a file and establishes a hard link to it from another directory. When the original file is deleted,
+the garbage collector should not free it, since the hard link still references it. This ensures correct handling of multiple references to the same object.
+- Purpose: Validates that the garbage collector does not prematurely delete memory if it is still being referenced elsewhere.
+- Expected Outcome: The file should still exist in the system as long as at least one hard link remains.
+
+fs_test3 - Orphaned Directory Cleanup
+Transaction File: fs_test3.txt
+Description:
+This test removes all references to a subdirectory except one, making it an "orphaned" directory.
+The garbage collector should recognize that it is still reachable and **not** remove it, ensuring proper reference tracking.
+- Purpose: Verifies that the garbage collector does not mistakenly remove directories that are still accessible through alternate paths.
+- Expected Outcome: The orphaned directory should remain in the system, demonstrating that the garbage collector accurately tracks reachable objects.

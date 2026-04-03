@@ -1,0 +1,26 @@
+# add and delete several nodes
+# there should be 4 nodes to free and 1 node reachable
+a 2777
+r 2777
+a 5386
+a 2362
+r 2362
+a 7763
+r 7763
+r 5386
+a 5736
+p
+g
+# there should be 3 nodes to free and 5 nodes reachable
+a 5368
+a 6429
+a 1530
+a 5123
+r 5123
+a 9802
+r 5368
+r 5736
+a 8456
+a 8042
+p
+g

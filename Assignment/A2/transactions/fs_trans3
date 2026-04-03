@@ -1,0 +1,9 @@
+# Remove most references, leaving one orphaned directory
+a root
+a home root
+a orphan home
+a temp home
+r temp home
+r home root
+p
+g

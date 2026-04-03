@@ -1,0 +1,12 @@
+# Create a directory tree and remove a subdirectory
+a root
+a home root
+a user home
+a docs user
+a subdir docs
+a file1 subdir
+a file2 subdir
+r subdir docs
+p
+g
+

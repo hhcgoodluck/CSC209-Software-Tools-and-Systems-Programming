@@ -1,0 +1,5 @@
+"Humans are allergic to change. They love to say, 'We've always done it this way.' I try to fight that. That's why I have a clock on my wall that runs counterclockwise." – Grace Hopper, computer scientist, and military admiral, one of the first to program the Harvard Mark I computer
+"Computers are incredibly fast, accurate, and stupid. Human beings are incredibly slow, inaccurate, and brilliant. Together they are powerful beyond imagination." – Albert Einstein, physicist
+"Computers are good at following instructions, but not at reading your mind." –Donald Knuth
+"If debugging is the process of removing software bugs, then programming must be the process of putting them in." – Edsger Dijkstra
+"The world would be a better place if more engineers, like me, hated technology. The stuff I design, if I'm successful, nobody will ever notice. Things will just work, and be self-managing." — Radia Pearlman, "the Mother of the Internet"

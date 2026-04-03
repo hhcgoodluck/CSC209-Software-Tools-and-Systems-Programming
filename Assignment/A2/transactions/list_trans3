@@ -1,0 +1,11 @@
+# Remove all nodes, then attempt to access freed memory
+a 3001
+a 3002
+a 3003
+r 3001
+r 3002
+r 3003
+p
+g
+# Attempting to access node 3001, expected failure
+p 3001

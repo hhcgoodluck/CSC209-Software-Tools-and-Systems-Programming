@@ -1,0 +1,146 @@
+Test 1: Verify get_data correctly reads small data blocks
+Purpose: Ensure get_data extracts the first 5 characters from the first 4 lines of quotes.txt.
+Command:
+./compute_parity 4 5 quotes.txt
+Expected output:
+Data blocks:
+"Huma
+"Comp
+"Comp
+"If d
+Parity block:
+00 01 13 4d 05
+
+---
+
+Test 2: Ensure get_data correctly handles block_size larger than line length
+The third line of quotes.txt is shorter than 20 characters, so it should be padded with '\0'.
+Command:
+./compute_parity 4 20 quotes.txt
+Expected output:
+Data blocks:
+"Humans are allergic
+"Computers are incre
+"Computers are good
+"If debugging is the
+Parity block:
+00 01 13 4d 05 0b 11 55 06 15 0c 4e 06 4c 05 18 53 1f 17 43
+
+---
+
+Test 3: Attempt to read more blocks than available in quotes.txt
+quotes.txt contains only 5 lines. Trying to read 6 blocks should return an error.
+Command:
+./compute_parity 6 5 quotes.txt
+Expected output:
+Error reading data from file
+Error reading data from file
+
+---
+
+Test 4: Compute parity for the first 4 blocks with block_size of 6
+Verify that compute_parity_block correctly computes parity for the first 6 characters of each line.
+Command:
+./compute_parity 4 6 quotes.txt
+Expected output:
+Data blocks:
+"Human
+"Compu
+"Compu
+"If de
+Parity block:
+00 01 13 4d 05 0b
+
+---
+
+Test 5: Compute parity for first 4 blocks with block_size 8
+Check whether compute_parity_block produces correct parity when using a block size of 8.
+Command:
+./compute_parity 4 8 quotes.txt
+Expected output:
+Data blocks:
+"Humans
+"Compute
+"Compute
+"If debu
+Parity block:
+00 01 13 4d 05 0b 11 55
+
+---
+
+Test 6: Compute parity for all 5 lines with block_size 4
+Ensure that compute_parity_block works when using all lines in quotes.txt with a small block size.
+Command:
+./compute_parity 5 4 quotes.txt
+Expected output:
+Data blocks:
+"Hum
+"Com
+"Com
+"If
+"The
+Parity block:
+22 55 7b 28
+
+---
+
+Test 7: Delete and restore the second data block
+Simulate a failure by deleting the second block and then restoring it.
+Command:
+./restore_block 4 5 quotes.txt 1
+Expected output:
+Data before block 1 is deleted
+"Huma
+"Comp
+"Comp
+"If d
+
+Data after block 1 is deleted
+"Huma
+
+"Comp
+"If d
+
+Reconstructed block 1:"Comp
+
+---
+
+Test 8: Delete and restore the first data block
+Simulate a failure where the first block is deleted and then restored.
+Command:
+./restore_block 4 5 quotes.txt 0
+Expected output:
+Data before block 0 is deleted
+"Huma
+"Comp
+"Comp
+"If d
+
+Data after block 0 is deleted
+
+"Comp
+"Comp
+"If d
+
+Reconstructed block 0:"Huma
+
+---
+
+Test 9: Restore a deleted block and verify that the restored block is correct
+Purpose: Ensure that restore_block successfully reconstructs the lost block by XORing the remaining blocks.
+Command:
+./restore_block 4 5 quotes.txt 2
+Expected output:
+Data before block 2 is deleted
+"Huma
+"Comp
+"Comp
+"If d
+
+Data after block 2 is deleted
+"Huma
+"Comp
+
+"If d
+
+Reconstructed block 2:"Comp
