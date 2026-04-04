@@ -9,13 +9,12 @@ class RaidGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("RAID Visualizer")
-        self.root.geometry("1250x900")
+        self.root.geometry("1250x920")
 
         # RAID configuration from your project
         self.num_data_disks = 3
         self.num_total_disks = 4          # 3 data + 1 parity
-        self.num_stripes = 4              # because disk size 256 / block size 16 = 16 blocks per disk,
-        # but your example figure uses 4 visible stripes for logical blocks 0..11
+        self.num_stripes = 4
         self.parity_disk_index = 3
 
         # Track disk states and label widgets
@@ -33,80 +32,130 @@ class RaidGUI:
         self.draw_layout()
 
         # ------------------------------
+        # Interaction mode selection
+        # ------------------------------
+        self.mode_var = tk.StringVar(value="buttons")
+
+        self.mode_frame = tk.LabelFrame(root, text="Interaction Mode", padx=10, pady=8)
+        self.mode_frame.pack(fill="x", padx=10, pady=5)
+
+        tk.Radiobutton(
+            self.mode_frame,
+            text="Button Controls",
+            variable=self.mode_var,
+            value="buttons",
+            command=self.update_mode
+        ).pack(side="left", padx=(0, 12))
+
+        tk.Radiobutton(
+            self.mode_frame,
+            text="Command Line",
+            variable=self.mode_var,
+            value="command",
+            command=self.update_mode
+        ).pack(side="left", padx=(0, 12))
+
+        # ------------------------------
         # Control panel
         # ------------------------------
-        control_frame = tk.LabelFrame(root, text="Controls", padx=10, pady=10)
-        control_frame.pack(fill="x", padx=10, pady=5)
+        self.control_frame = tk.LabelFrame(root, text="Controls", padx=10, pady=10)
 
+        # fixed columns for clean alignment
+        for i in range(5):
+            self.control_frame.columnconfigure(i, weight=0)
+
+        # make the main entry column a fixed minimum width so all three left entries match exactly
+        self.control_frame.columnconfigure(1, minsize=260)
+
+        # Row 0: top buttons
         self.status_button = tk.Button(
-            control_frame, text="Refresh Status", command=self.send_status
+            self.control_frame, text="Refresh Status", width=14, command=self.send_status
         )
-        self.status_button.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.status_button.grid(row=0, column=0, padx=(8, 8), pady=(6, 12), sticky="w")
 
-        tk.Label(control_frame, text="Disk ID:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
-        self.kill_entry = tk.Entry(control_frame, width=10)
-        self.kill_entry.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+        self.exit_button = tk.Button(
+            self.control_frame, text="Exit", width=10, command=self.send_exit
+        )
+        self.exit_button.grid(row=0, column=1, padx=(8, 8), pady=(6, 12), sticky="w")
+
+        # Row 1: kill disk
+        tk.Label(self.control_frame, text="Disk ID:", width=14, anchor="e").grid(
+            row=1, column=0, padx=(8, 8), pady=6, sticky="e"
+        )
+        self.kill_entry = tk.Entry(self.control_frame)
+        self.kill_entry.grid(row=1, column=1, padx=(0, 16), pady=6, sticky="ew")
 
         self.kill_button = tk.Button(
-            control_frame, text="Kill Disk", command=self.send_kill
+            self.control_frame, text="Kill Disk", width=12, command=self.send_kill
         )
-        self.kill_button.grid(row=1, column=2, padx=5, pady=5, sticky="w")
+        self.kill_button.grid(row=1, column=2, padx=(0, 8), pady=6, sticky="w")
 
-        tk.Label(control_frame, text="Read Block ID:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
-        self.read_entry = tk.Entry(control_frame, width=10)
-        self.read_entry.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        # Row 2: read block
+        tk.Label(self.control_frame, text="Read Block ID:", width=14, anchor="e").grid(
+            row=2, column=0, padx=(8, 8), pady=6, sticky="e"
+        )
+        self.read_entry = tk.Entry(self.control_frame)
+        self.read_entry.grid(row=2, column=1, padx=(0, 16), pady=6, sticky="ew")
 
         self.read_button = tk.Button(
-            control_frame, text="Read Block", command=self.send_read
+            self.control_frame, text="Read Block", width=12, command=self.send_read
         )
-        self.read_button.grid(row=2, column=2, padx=5, pady=5, sticky="w")
+        self.read_button.grid(row=2, column=2, padx=(0, 8), pady=6, sticky="w")
 
-        tk.Label(control_frame, text="Write Block ID:").grid(row=3, column=0, padx=5, pady=5, sticky="e")
-        self.write_block_entry = tk.Entry(control_frame, width=10)
-        self.write_block_entry.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+        # Row 3: write block + local file
+        tk.Label(self.control_frame, text="Write Block ID:", width=14, anchor="e").grid(
+            row=3, column=0, padx=(8, 8), pady=6, sticky="e"
+        )
 
-        tk.Label(control_frame, text="Local File:").grid(row=3, column=2, padx=5, pady=5, sticky="e")
-        self.write_file_entry = tk.Entry(control_frame, width=25)
-        self.write_file_entry.grid(row=3, column=3, padx=5, pady=5, sticky="w")
+        self.write_block_entry = tk.Entry(self.control_frame)
+        self.write_block_entry.grid(row=3, column=1, padx=(0, 6), pady=6, sticky="ew")
+
+        # compact sub-row starting immediately after column 1
+        self.write_extra_frame = tk.Frame(self.control_frame)
+        self.write_extra_frame.grid(row=3, column=2, columnspan=3, padx=(0, 0), pady=6, sticky="w")
+
+        tk.Label(self.write_extra_frame, text="Local File:", width=10, anchor="e").pack(
+            side="left", padx=(0, 2)
+        )
+
+        self.write_file_entry = tk.Entry(self.write_extra_frame, width=18)
+        self.write_file_entry.pack(side="left", padx=(0, 6))
 
         self.write_button = tk.Button(
-            control_frame, text="Write Block", command=self.send_write
+            self.write_extra_frame, text="Write Block", width=12, command=self.send_write
         )
-        self.write_button.grid(row=3, column=4, padx=5, pady=5, sticky="w")
-
-        control_frame.columnconfigure(3, weight=1)
-
-        # ------------------------------
-        # Output area
-        # ------------------------------
-        output_frame = tk.LabelFrame(root, text="System Output", padx=5, pady=5)
-        output_frame.pack(fill="both", expand=True, padx=10, pady=5)
-
-        self.output_box = ScrolledText(output_frame, width=120, height=28, state="disabled")
-        self.output_box.pack(fill="both", expand=True)
-
-        # Color tags
-        self.output_box.tag_config("CMD", foreground="#1f77b4")      # blue
-        self.output_box.tag_config("FLOW", foreground="#9467bd")     # purple
-        self.output_box.tag_config("INFO", foreground="#2ca02c")     # green
-        self.output_box.tag_config("ERROR", foreground="#d62728")    # red
-        self.output_box.tag_config("STATUS", foreground="#ff7f0e")   # orange
-        self.output_box.tag_config("INPUT", foreground="#7f7f7f")    # gray
-        self.output_box.tag_config("BANNER", foreground="#444444")   # dark gray
-        self.output_box.tag_config("DATA", foreground="#000000")     # black
+        self.write_button.pack(side="left")
 
         # ------------------------------
         # Manual command input
         # ------------------------------
-        input_frame = tk.LabelFrame(root, text="Manual Command Input", padx=10, pady=10)
-        input_frame.pack(fill="x", padx=10, pady=(5, 10))
+        self.input_frame = tk.LabelFrame(root, text="Command Line Input", padx=10, pady=10)
 
-        self.command_entry = tk.Entry(input_frame, width=80)
+        self.command_entry = tk.Entry(self.input_frame, width=80)
         self.command_entry.pack(side="left", padx=(0, 10), expand=True, fill="x")
         self.command_entry.bind("<Return>", self.send_command)
 
-        self.send_button = tk.Button(input_frame, text="Send", command=self.send_command)
+        self.send_button = tk.Button(self.input_frame, text="Send", width=10, command=self.send_command)
         self.send_button.pack(side="left")
+
+        # ------------------------------
+        # Output area
+        # ------------------------------
+        self.output_frame = tk.LabelFrame(root, text="System Output", padx=5, pady=5)
+        self.output_frame.pack(fill="both", expand=True, padx=10, pady=5)
+
+        self.output_box = ScrolledText(self.output_frame, width=120, height=30, state="disabled")
+        self.output_box.pack(fill="both", expand=True)
+
+        # Color tags
+        self.output_box.tag_config("CMD", foreground="#1f77b4")
+        self.output_box.tag_config("FLOW", foreground="#9467bd")
+        self.output_box.tag_config("INFO", foreground="#2ca02c")
+        self.output_box.tag_config("ERROR", foreground="#d62728")
+        self.output_box.tag_config("STATUS", foreground="#ff7f0e")
+        self.output_box.tag_config("INPUT", foreground="#7f7f7f")
+        self.output_box.tag_config("BANNER", foreground="#444444")
+        self.output_box.tag_config("DATA", foreground="#000000")
 
         # ------------------------------
         # Start backend process
@@ -130,6 +179,9 @@ class RaidGUI:
         self.append_output("[INFO] Disk headers will turn green/red based on alive/dead status.\n")
         self.append_output("[INFO] Read/write commands will highlight the corresponding data block and parity block.\n\n")
 
+        # Start in button mode
+        self.update_mode()
+
         # Start reader thread
         self.reader_thread = threading.Thread(target=self.read_output, daemon=True)
         self.reader_thread.start()
@@ -145,7 +197,7 @@ class RaidGUI:
         self.disk_header_labels.clear()
 
         title_frame = tk.Frame(self.layout_frame)
-        title_frame.pack(fill="x", pady=(0, 8))
+        title_frame.pack(fill="x", pady=(0, 4))
 
         tk.Label(
             title_frame,
@@ -156,7 +208,6 @@ class RaidGUI:
         table_frame = tk.Frame(self.layout_frame)
         table_frame.pack(pady=5)
 
-        # Left stripe labels
         tk.Label(table_frame, text="", width=10).grid(row=0, column=0, padx=5, pady=4)
 
         disk_names = ["Disk 0", "Disk 1", "Disk 2", "Parity Disk\n(Disk 3)"]
@@ -175,7 +226,6 @@ class RaidGUI:
             lbl.grid(row=0, column=d + 1, padx=8, pady=4)
             self.disk_header_labels[d] = lbl
 
-        # rows / stripes
         logical_block = 0
         for stripe in range(self.num_stripes):
             tk.Label(
@@ -185,7 +235,6 @@ class RaidGUI:
                 font=("Arial", 11)
             ).grid(row=stripe + 1, column=0, padx=5, pady=4)
 
-            # data disks
             for d in range(self.num_data_disks):
                 block_label = tk.Label(
                     table_frame,
@@ -221,6 +270,18 @@ class RaidGUI:
         tk.Label(legend_frame, text="Alive", bg="#c8f7c5", width=10, relief="solid").pack(side="left", padx=5)
         tk.Label(legend_frame, text="Dead", bg="#f7c5c5", width=10, relief="solid").pack(side="left", padx=5)
         tk.Label(legend_frame, text="Highlighted access", bg="#fff59d", width=16, relief="solid").pack(side="left", padx=5)
+
+    # -------------------------------------------------
+    # Interaction mode switching
+    # -------------------------------------------------
+    def update_mode(self):
+        self.control_frame.pack_forget()
+        self.input_frame.pack_forget()
+
+        if self.mode_var.get() == "buttons":
+            self.control_frame.pack(fill="x", padx=10, pady=5, before=self.output_frame)
+        else:
+            self.input_frame.pack(fill="x", padx=10, pady=(5, 10), before=self.output_frame)
 
     # -------------------------------------------------
     # Highlight logic
@@ -294,7 +355,7 @@ class RaidGUI:
                 tag = "ERROR"
             elif stripped.startswith("[STATUS]"):
                 tag = "STATUS"
-            elif stripped.startswith(">"):
+            elif stripped.startswith("raid>"):
                 tag = "INPUT"
 
         if tag:
@@ -305,11 +366,9 @@ class RaidGUI:
         self.output_box.see(tk.END)
         self.output_box.config(state="disabled")
 
-        # Parse lines for visualization updates
         self.parse_line_for_visual_updates(text)
 
     def parse_line_for_visual_updates(self, line):
-        # [STATUS] disk=1 state=DEAD pid=28787
         status_match = re.search(r"\[STATUS\]\s+disk=(\d+)\s+state=([A-Z]+)", line)
         if status_match:
             disk_num = int(status_match.group(1))
@@ -317,14 +376,12 @@ class RaidGUI:
             self.update_disk_status(disk_num, state)
             return
 
-        # [CMD] rb 1
         cmd_read_match = re.search(r"\[CMD\]\s+rb\s+(\d+)", line)
         if cmd_read_match:
             logical_block = int(cmd_read_match.group(1))
             self.highlight_logical_block(logical_block)
             return
 
-        # [CMD] wb 5 ...
         cmd_write_match = re.search(r"\[CMD\]\s+wb\s+(\d+)", line)
         if cmd_write_match:
             logical_block = int(cmd_write_match.group(1))
@@ -342,7 +399,7 @@ class RaidGUI:
         if not cmd.strip():
             return
 
-        # self.append_output(f"raid> {cmd}\n")
+        self.append_output(f"raid> {cmd}\n", "INPUT")
 
         if self.process.stdin:
             self.process.stdin.write(cmd + "\n")
@@ -382,6 +439,10 @@ class RaidGUI:
             return
 
         self.send_text_command(f"wb {block_id} {filename}")
+
+    def send_exit(self):
+        self.send_text_command("exit")
+        self.root.after(200, self.root.destroy)
 
     # -------------------------------------------------
     # Close
