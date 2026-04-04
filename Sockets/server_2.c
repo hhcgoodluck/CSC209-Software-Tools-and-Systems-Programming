@@ -30,7 +30,6 @@ int main() {
         exit(1);
     }
 
-
     // Set up a queue in the kernel to hold pending connections.
     if (listen(listen_soc, 5) < 0) {
         // listen failed
@@ -47,7 +46,6 @@ int main() {
         perror("accept");
         return -1;
     }
-
 
     write(client_socket, "hello\r\n", 7);
 
