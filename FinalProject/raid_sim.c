@@ -191,7 +191,6 @@ int execute_command(command_t *cmd) {
             printf("Usage: wb <block_num> <file from local>\n");
             return -1;
         }
-        printf("wb\n");
         copy_block_to_raid(atoi(cmd->arg1), cmd->arg2);
         return 0;
     }

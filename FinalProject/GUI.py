@@ -342,7 +342,7 @@ class RaidGUI:
         if not cmd.strip():
             return
 
-        self.append_output(f"> {cmd}\n")
+        # self.append_output(f"raid> {cmd}\n")
 
         if self.process.stdin:
             self.process.stdin.write(cmd + "\n")

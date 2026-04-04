@@ -48,7 +48,6 @@ static void log_error(const char *msg) {
     fflush(stderr);
 }
 
-
 /* Ignoring SIGPIPE allows us to check write calls for error rather than
  * terminating the whole system.
  */
@@ -283,6 +282,7 @@ int init_all_controllers(int total_disks) {
  * Returns 0 on success and -1 on failure.
  */
 int read_block_from_disk(int block_num, char* data, int parity_flag) {
+    // Validate the data buffer
     if (!data) {
         fprintf(stderr, "Error: Invalid data buffer\n");
         return -1;
@@ -291,9 +291,10 @@ int read_block_from_disk(int block_num, char* data, int parity_flag) {
     // Identify the stripe to read from
     int disk_num;
     if (parity_flag == 1) {
-        // parity disk is the last disk
+        // Parity disk index(last)
         disk_num = num_disks;
     } else {
+        // Data disk index
         disk_num = block_num % num_disks;
     }
 
@@ -308,10 +309,12 @@ int read_block_from_disk(int block_num, char* data, int parity_flag) {
 
     // Write the command and the block number to the disk process
     // Then read the block from the disk process
-    ssize_t n;
 
-    /* Send command */
-    n = write(controllers[disk_num].to_disk[1], &cmd, sizeof(cmd));
+    ssize_t n;
+    int write_fd = controllers[disk_num].to_disk[1];
+
+    /* Send read command */
+    n = write(write_fd, &cmd, sizeof(cmd));
     if (n == -1) {
         restore_disk_process(disk_num);
         return -1;
@@ -723,8 +726,6 @@ void restore_disk_process(int disk_num) {
     free(recovered);
     free(temp);
 }
-
-
 
 static int is_disk_alive(int disk_num) {
     pid_t pid = controllers[disk_num].pid;
