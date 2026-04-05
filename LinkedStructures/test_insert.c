@@ -19,6 +19,7 @@ Node *create_node(int num, Node *next) {
    Return 0 on success and -1 on failure. */
 int insert(int num, Node **front_ptr, int position) {
 
+	// 函数需要改变外部指针，必须传递*指针的地址*
 	// Node **front_ptr 二重指针 front_ptr -> ptr_var -> front
 	// 传递地址(address / reference)
     Node *curr = *front_ptr;	// 解引用(dereference) 普通指针
