@@ -218,16 +218,24 @@ it reports the error and returns `-1` (calling `restore_disk_process(disk_num)` 
 **Why this is robust:**
 This ensures that only complete blocks of size `block_size` are processed, preventing partial transfers from being treated as valid data.
 
-## 5.6.5. Invalid block number supplied to controller functions
+## 5.6.6. Invalid logical block number supplied to a RAID operation
 
 **Bad behaviour:**  
-A caller may request a read or write using a logical block number outside the valid RAID range.
+A caller may request a read or write using a logical block number outside the valid RAID data range. 
+Since logical block numbers refer only to data blocks (not the parity disk), 
+an out-of-range value would lead to an invalid mapping from a logical block to a data disk and stripe position.
 
 **How the code handles it:**  
-The controller validates the block number before sending any request to a disk process. If the block number is invalid, the function immediately returns `-1` and does not send malformed commands through the pipe.
+This case is handled in both `write_block()` and `read_block()`. 
+In each function, the controller first computes `blocks_per_disk` and `total_logical_blocks`, 
+then checks whether `block_num` lies in the valid range `[0, total_logical_blocks)`. 
+If the value is invalid, the code logs an error (`"Invalid logical block number for write"` or `"Invalid logical block number for read"`) 
+and immediately returns without sending any command to a disk process. 
+As a result, no invalid disk index, stripe calculation, or pipe communication is performed for an out-of-range request.
 
 **Why this is robust:**  
-This prevents out-of-range indexing, incorrect disk selection, and invalid offsets inside the child disk process. It also keeps the communication protocol well-formed.
+This prevents malformed RAID requests from propagating into the controller–disk communication layer. 
+By rejecting invalid logical block numbers early, the code avoids incorrect disk selection, invalid stripe offsets, and unnecessary child-process communication.
 
 ## 5.6.6. Failure while shutting down disk processes
 

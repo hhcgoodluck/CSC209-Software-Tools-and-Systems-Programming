@@ -315,7 +315,7 @@ int read_block_from_disk(int block_num, char* data, int parity_flag) {
     ssize_t n;
     int write_fd = controllers[disk_num].to_disk[1];
 
-    /* Send read command */
+    // Send read command
     n = write(write_fd, &cmd, sizeof(cmd));
     if (n == -1) {
         restore_disk_process(disk_num);
@@ -326,7 +326,7 @@ int read_block_from_disk(int block_num, char* data, int parity_flag) {
         return -1;
     }
 
-    /* Send block number within that disk */
+    // Send block number within that disk
     n = write(controllers[disk_num].to_disk[1], &disk_block_num, sizeof(disk_block_num));
     if (n == -1) {
         restore_disk_process(disk_num);
@@ -337,7 +337,7 @@ int read_block_from_disk(int block_num, char* data, int parity_flag) {
         return -1;
     }
 
-    /* Read block_size bytes back from the child */
+    // Read block_size bytes back from the child
     size_t bytes_read_total = 0;
     while (bytes_read_total < (size_t)block_size) {
         n = read(controllers[disk_num].from_disk[0],
