@@ -48,7 +48,11 @@ Additionally, a graphical user interface (GUI.py) is provided to visualize the R
 
 # 5.4 Communication Protocol
 
-Communication between the RAID controller (parent process) and each disk process (child process) is implemented using two dedicated pipes per disk. For disk `i`, the parent writes requests on `controllers[i].to_disk[1]`, and reads responses from `controllers[i].from_disk[0]`. The child uses the opposite ends of these same pipes. This design matches the Category 1 requirement that all significant inter-process communication travel through pipes. The simulator supports three command types at the disk level: `CMD_READ`, `CMD_WRITE`, and `CMD_EXIT`. At the user level, these commands are triggered by the higher-level RAID operations `rb`, `wb`, `kill`, and `exit`.
+Communication between the RAID controller (parent process) and each disk process (child process) is implemented using two dedicated pipes per disk. 
+For disk `i`, the parent writes requests on `controllers[i].to_disk[1]`, and reads responses from `controllers[i].from_disk[0]`. 
+The child uses the opposite ends of these same pipes. This design matches the Category 1 requirement that all significant inter-process communication travel through pipes. 
+The simulator supports three command types at the disk level: `CMD_READ`, `CMD_WRITE`, and `CMD_EXIT`. 
+At the user level, these commands are triggered by the higher-level RAID operations `rb`, `wb`, `kill`, and `exit`.
 
 ## 5.4.1 Message Type: Read Request
 
@@ -60,7 +64,9 @@ Communication between the RAID controller (parent process) and each disk process
 | **Response** | Child disk process → parent. The child sends back exactly `block_size` bytes containing the requested block data. The parent repeatedly calls `read()` until all `block_size` bytes have been received. |
 | **Error handling** | If either write of the request fails with `-1`, the controller treats this as disk failure, calls `restore_disk_process(disk_num)`, and returns failure for the current operation. If the response cannot be read completely (for example, `read()` returns `<= 0` before `block_size` bytes are collected), the operation also fails. |
 
-In the implementation, the controller does **not** send a variable-length message or a packed struct. Instead, it sends the message as a small protocol sequence: command opcode first, then block number, then waits for a fixed-size reply. This makes it clear to the receiver how many bytes to read and in what order.
+In the implementation, the controller does **not** send a variable-length message or a packed struct. 
+Instead, it sends the message as a small protocol sequence: command opcode first, then block number, then waits for a fixed-size reply. 
+This makes it clear to the receiver how many bytes to read and in what order.
 
 ## 5.4.2 Message Type: Write Request
 
@@ -72,7 +78,11 @@ In the implementation, the controller does **not** send a variable-length messag
 | **Response** | No explicit acknowledgment message is sent back on success. Successful completion is inferred from the fact that all writes to the pipe succeed and the child remains alive. |
 | **Error handling** | If writing the command, block number, or block payload returns `-1`, the controller assumes the disk process has failed, invokes `restore_disk_process(disk_num)`, and aborts the current write path. The implementation also treats zero-byte progress or a short command/block-number write as an error. For the block payload, the controller uses a loop so that partial writes are retried until all `block_size` bytes are sent. |
 
-This message type is used both for ordinary data writes and for parity writes. Importantly, the disk process itself is unaware of RAID semantics: parity computation is done entirely in the controller, which first reads the old data block and old parity block, computes `new_parity = old_parity XOR old_data XOR new_data`, writes the updated parity block, and then writes the new data block. Thus, the protocol seen by the child remains a simple block-write protocol.
+This message type is used both for ordinary data writes and for parity writes. 
+Importantly, the disk process itself is unaware of RAID semantics: parity computation is done entirely in the controller, 
+which first reads the old data block and old parity block, computes `new_parity = old_parity XOR old_data XOR new_data`, 
+writes the updated parity block, and then writes the new data block. 
+Thus, the protocol seen by the child remains a simple block-write protocol.
 
 ## 5.4.3 Message Type: Exit / Checkpoint Request
 
@@ -84,14 +94,22 @@ This message type is used both for ordinary data writes and for parity writes. I
 | **Response** | No explicit data response is required. The parent observes termination by waiting for child processes using `wait()`. |
 | **Error handling** | In `checkpoint_and_wait()`, if the parent cannot successfully send `CMD_EXIT` to a disk, it prints a warning and continues shutdown. Since this is a final cleanup phase, the implementation treats these failures as non-fatal. |
 
-This matches the assignment specification: the user-level `exit` command causes the controller to send checkpoint commands to all disks and then wait for the child processes to terminate.
+This matches the specification: the user-level `exit` command causes the controller to send checkpoint commands to all disks 
+and then wait for the child processes to terminate.
 ## 5.4.4 Failure-Triggered Recovery as Part of the Protocol
 
-Although disk recovery is not encoded as a separate pipe message type, it is an essential part of the communication protocol because communication failure is how the controller detects that a disk has died. The implementation explicitly ignores `SIGPIPE`, so a failed disk does not terminate the whole controller process. Instead, when a pipe write returns `-1`, the controller closes the stale pipe endpoints, restarts the corresponding disk process with `restart_disk()`, and reconstructs the missing disk contents stripe by stripe using the parity relation. For a failed data disk, the recovered block is computed as the parity block XOR all remaining data blocks in the stripe; for a failed parity disk, the controller rebuilds each parity block by XORing all data blocks in that stripe. This behavior is required by the assignment description and is directly implemented in `restore_disk_process()`. 
+Although disk recovery is not encoded as a separate pipe message type, it is an essential part of the communication protocol 
+because communication failure is how the controller detects that a disk has died. 
+The implementation explicitly ignores `SIGPIPE`, so a failed disk does not terminate the whole controller process. 
+Instead, when a pipe write returns `-1`, the controller closes the stale pipe endpoints, restarts the corresponding disk process with `restart_disk()`, 
+and reconstructs the missing disk contents stripe by stripe using the parity relation. 
+For a failed data disk, the recovered block is computed as the parity block XOR all remaining data blocks in the stripe; 
+for a failed parity disk, the controller rebuilds each parity block by XORing all data blocks in that stripe. 
+This behavior is required by the assignment description and is directly implemented in `restore_disk_process()`. 
 
 ## 5.4.5 Summary
 
-Overall, the protocol is a small binary command protocol over pipes. Each message type is self-delimiting because the receiver knows, from the command opcode, exactly what fields must follow and how many bytes each field occupies. `CMD_READ` is followed by one integer and produces a fixed-size block response; `CMD_WRITE` is followed by one integer and one fixed-size block payload; `CMD_EXIT` consists only of the opcode. This design keeps the disk processes simple, makes synchronization natural through blocking `read()` calls, and integrates failure detection directly into the communication layer. :contentReference[oaicite:10]{index=10}
+Overall, the protocol is a small binary command protocol over pipes. Each message type is self-delimiting because the receiver knows, from the command opcode, exactly what fields must follow and how many bytes each field occupies. `CMD_READ` is followed by one integer and produces a fixed-size block response; `CMD_WRITE` is followed by one integer and one fixed-size block payload; `CMD_EXIT` consists only of the opcode. This design keeps the disk processes simple, makes synchronization natural through blocking `read()` calls, and integrates failure detection directly into the communication layer.
 
 
 
