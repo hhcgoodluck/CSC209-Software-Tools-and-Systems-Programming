@@ -11,7 +11,7 @@ class RaidGUI:
         self.root.title("RAID Visualizer")
         self.root.geometry("1250x920")
 
-        # RAID configuration from your project
+        # RAID configuration (VideoDisplayExample)
         self.num_data_disks = 3
         self.num_total_disks = 4          # 3 data + 1 parity
         self.num_stripes = 4
