@@ -60,7 +60,7 @@ Communication between the RAID controller (parent process) and each disk process
 | **Response** | Child disk process → parent. The child sends back exactly `block_size` bytes containing the requested block data. The parent repeatedly calls `read()` until all `block_size` bytes have been received. |
 | **Error handling** | If either write of the request fails with `-1`, the controller treats this as disk failure, calls `restore_disk_process(disk_num)`, and returns failure for the current operation. If the response cannot be read completely (for example, `read()` returns `<= 0` before `block_size` bytes are collected), the operation also fails. |
 
-In the implementation, the controller does **not** send a variable-length message or a packed struct. Instead, it sends the message as a small protocol sequence: command opcode first, then block number, then waits for a fixed-size reply. This makes it clear to the receiver how many bytes to read and in what order. :contentReference[oaicite:3]{index=3}
+In the implementation, the controller does **not** send a variable-length message or a packed struct. Instead, it sends the message as a small protocol sequence: command opcode first, then block number, then waits for a fixed-size reply. This makes it clear to the receiver how many bytes to read and in what order.
 
 ## 5.4.2 Message Type: Write Request
 
@@ -84,11 +84,10 @@ This message type is used both for ordinary data writes and for parity writes. I
 | **Response** | No explicit data response is required. The parent observes termination by waiting for child processes using `wait()`. |
 | **Error handling** | In `checkpoint_and_wait()`, if the parent cannot successfully send `CMD_EXIT` to a disk, it prints a warning and continues shutdown. Since this is a final cleanup phase, the implementation treats these failures as non-fatal. |
 
-This matches the assignment specification: the user-level `exit` command causes the controller to send checkpoint commands to all disks and then wait for the child processes to terminate. :contentReference[oaicite:6]{index=6} :contentReference[oaicite:7]{index=7}
-
+This matches the assignment specification: the user-level `exit` command causes the controller to send checkpoint commands to all disks and then wait for the child processes to terminate.
 ## 5.4.4 Failure-Triggered Recovery as Part of the Protocol
 
-Although disk recovery is not encoded as a separate pipe message type, it is an essential part of the communication protocol because communication failure is how the controller detects that a disk has died. The implementation explicitly ignores `SIGPIPE`, so a failed disk does not terminate the whole controller process. Instead, when a pipe write returns `-1`, the controller closes the stale pipe endpoints, restarts the corresponding disk process with `restart_disk()`, and reconstructs the missing disk contents stripe by stripe using the parity relation. For a failed data disk, the recovered block is computed as the parity block XOR all remaining data blocks in the stripe; for a failed parity disk, the controller rebuilds each parity block by XORing all data blocks in that stripe. This behavior is required by the assignment description and is directly implemented in `restore_disk_process()`. :contentReference[oaicite:8]{index=8} :contentReference[oaicite:9]{index=9}
+Although disk recovery is not encoded as a separate pipe message type, it is an essential part of the communication protocol because communication failure is how the controller detects that a disk has died. The implementation explicitly ignores `SIGPIPE`, so a failed disk does not terminate the whole controller process. Instead, when a pipe write returns `-1`, the controller closes the stale pipe endpoints, restarts the corresponding disk process with `restart_disk()`, and reconstructs the missing disk contents stripe by stripe using the parity relation. For a failed data disk, the recovered block is computed as the parity block XOR all remaining data blocks in the stripe; for a failed parity disk, the controller rebuilds each parity block by XORing all data blocks in that stripe. This behavior is required by the assignment description and is directly implemented in `restore_disk_process()`. 
 
 ## 5.4.5 Summary
 
