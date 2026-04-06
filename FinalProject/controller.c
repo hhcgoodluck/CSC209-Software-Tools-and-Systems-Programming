@@ -25,9 +25,12 @@
  * for each disk.
  */
 
-// Global array to store information about each disk's communication pipes.
+
 static disk_controller_t* controllers;
 
+/* Global array to store information about
+ *	each disk's communication pipes.
+ */
 static void log_cmd(const char *msg) {
     printf("[CMD] %s\n", msg);
     fflush(stdout);
@@ -91,13 +94,13 @@ static int init_disk(int num) {
         return -1;
     }
 
-    /* child process */
+    // child process
     if (pid == 0) {
 
-        /* child reads commands/data from parent on to_disk[0] */
+        // child reads commands/data from parent on to_disk[0]
         close(controllers[num].to_disk[1]);
 
-        /* child writes results back to parent on from_disk[1] */
+        // child writes results back to parent on from_disk[1]
         close(controllers[num].from_disk[0]);
 
         /*
@@ -132,19 +135,19 @@ static int init_disk(int num) {
 
         start_disk(num, child_write_fd, child_read_fd);
 
-        /* start_disk should not return */
+        // start_disk should not return
         close(controllers[num].to_disk[0]);
         close(controllers[num].from_disk[1]);
         _exit(EXIT_FAILURE);
     }
 
-    /* parent process */
+    // parent process
     controllers[num].pid = pid;
 
-    /* parent writes to child on to_disk[1] */
+    // parent writes to child on to_disk[1]
     close(controllers[num].to_disk[0]);
 
-    /* parent reads from child on from_disk[0] */
+    // parent reads from child on from_disk[0]
     close(controllers[num].from_disk[1]);
 
     return 0;
@@ -186,7 +189,7 @@ int restart_disk(int num) {
         return -1;
     }
 
-    /* child process */
+    // child process
     if (pid == 0) {
 
         // Keep only the ends this child needs.

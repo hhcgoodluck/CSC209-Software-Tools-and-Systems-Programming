@@ -25,8 +25,11 @@
 #define NUM_READS 10
 
 int main() {
+	// 系统调用 pipr 创建管道
     int pipefd[2];
     pipe(pipefd);
+
+	// 系统调用 fork 复制子进程
     int r = fork();
     if (r == 0) { // Child process
         // (code omitted)...
