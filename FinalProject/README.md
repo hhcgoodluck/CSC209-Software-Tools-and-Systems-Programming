@@ -142,27 +142,23 @@ Our implementation includes explicit error checking for system calls and pipe-ba
 
 Below are several examples of bad runtime behaviours and how the code handles them.
 
-## 5.6.1. Pipe creation failure
+## 5.6.1. Resource initialization failure (pipe and fork)
 
 **Bad behaviour:**  
-A call to `pipe()` may fail while the controller is initializing communication channels for a disk process.
+A system call used to create a disk process may fail while the controller is setting up or recreating a disk. 
+In particular, either `pipe()` may fail when creating the `to_disk` / `from_disk` communication channels, or `fork()` may fail when creating the child disk process.
 
 **How the code handles it:**  
-The return value of `pipe()` is checked immediately. If pipe creation fails, the code reports the error using `perror()`. If one pipe has already been created successfully before the second one fails, the already-open file descriptors are closed before returning. This prevents file descriptor leaks and ensures that initialization does not continue in a partially constructed state.
+This case is handled in both `init_disk()` and `restart_disk()`. 
+Each function first creates `controllers[num].to_disk`, then `controllers[num].from_disk`, and checks the return value of each `pipe()` call immediately. 
+If the first `pipe()` fails, the function reports the error with `perror()` and returns `-1`. 
+If the second `pipe()` fails, the code closes both ends of the first pipe before returning, so the controller does not keep half-initialized communication channels open. 
+After both pipes succeed, the code calls `fork()` and checks whether the returned PID is negative. 
+If `fork()` fails, it reports the error with `perror()`, closes all four pipe descriptors for that disk (`to_disk[0]`, `to_disk[1]`, `from_disk[0]`, and `from_disk[1]`), 
+and returns `-1` instead of continuing. Only when both pipes and `fork()` succeed does the parent store `controllers[num].pid` and keep the intended pipe ends open for normal controller–disk communication.
 
 **Why this is robust:**  
-Without this check, later reads and writes would use invalid file descriptors and lead to undefined behaviour. By failing early and cleaning up immediately, the controller preserves a consistent state.
-
-## 5.6.2. Fork failure when creating a disk process
-
-**Bad behaviour:**  
-A call to `fork()` may fail when the controller attempts to create a child disk process.
-
-**How the code handles it:**  
-The controller checks whether `fork()` returns a negative value. If it does, the code reports the error with `perror()`, closes all pipe file descriptors that were opened for that disk, and returns failure instead of continuing.
-
-**Why this is robust:**  
-This prevents the controller from incorrectly assuming that a worker exists when it does not. It also avoids leaking pipe descriptors associated with a child process that was never created.
+This prevents the controller from continuing with partially created pipes or a missing child process, and it avoids leaking file descriptors during disk initialization or restart.
 
 ## 5.6.3. Writing to a closed or broken pipe
 
@@ -236,17 +232,6 @@ As a result, no invalid disk index, stripe calculation, or pipe communication is
 **Why this is robust:**  
 This prevents malformed RAID requests from propagating into the controller–disk communication layer. 
 By rejecting invalid logical block numbers early, the code avoids incorrect disk selection, invalid stripe offsets, and unnecessary child-process communication.
-
-## 5.6.6. Failure while shutting down disk processes
-
-**Bad behaviour:**  
-During shutdown, a disk may already be dead when the controller attempts to send `CMD_EXIT`, or waiting for child termination may encounter an already-collected or failed child.
-
-**How the code handles it:**  
-The controller still checks the return values of writes during checkpoint and shutdown. If a write fails, it reports the error and continues cleanup rather than aborting the whole shutdown sequence. It then calls `wait()` to collect child processes that can still be reaped.
-
-**Why this is robust:**  
-Shutdown code should be best-effort rather than fragile. Even if one disk is already gone, the controller still cleans up the remaining processes and file descriptors as safely as possible.
 
 ## 5.6 Conclusion
 The main robustness strategy in this project is to treat every important system call as potentially fallible. In particular, the implementation checks the results of `pipe()`, `fork()`, `read()`, `write()`, and process cleanup operations. When an error occurs, the code reports it, closes any no-longer-needed file descriptors, avoids continuing in an inconsistent state, and returns an error code to the caller. This makes the simulator much more reliable as a multi-process system program.
