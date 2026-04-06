@@ -1,22 +1,5 @@
 # 5.1 Project Overview
 
-The RAID simulator supports the following core operations:
-- **Write Block (`wb <block_num> <filename>`)**: Reads `block_size` bytes from a local file and writes the data to the specified logical block in the RAID system. This operation also updates the parity block to maintain consistency.
-- **Read Block (`rb <block_num>`)**: Retrieves the data stored in a given logical block and prints it to standard output.
-- **Simulate Disk Failure (`kill <disk_num>`)**: Sends a `SIGINT` signal to terminate a disk process, simulating a disk failure scenario.
-- **Exit (`exit`)**: Sends a checkpoint command to all disk processes, causing them to write their data to disk files and terminate gracefully.
-
-Internally, the system uses inter-process communication (IPC) via pipes to enable communication between the controller and disk processes. Each disk process continuously listens for commands (e.g., read, write, exit), executes them, and returns results when necessary. The controller is responsible for translating high-level RAID operations into low-level disk commands and ensuring proper coordination between processes.
-
-A key feature of this system is its ability to tolerate disk failures. When a disk fails, the controller can reconstruct the lost data using the parity information and data from the remaining disks. This demonstrates the fundamental principle of RAID-4 systems, where redundancy is used to ensure data reliability.
-
-Overall, this project belongs to the category of systems programming and demonstrates key concepts such as process creation (`fork`), inter-process communication (pipes), fault tolerance, and low-level data management.
-
-Additionally, a graphical user interface (GUI.py) is provided to visualize the RAID system state and user interactions.
-
-
-# 5.1 Project Overview
-
 This project implements a simulation of a RAID-4 storage system at the block level. 
 The system is designed to provide fault tolerance and data reliability by distributing data blocks across multiple disks and maintaining a dedicated parity disk. 
 In this simulation, each disk is represented by a separate child process, while a central controller (the parent process) coordinates all operations.
