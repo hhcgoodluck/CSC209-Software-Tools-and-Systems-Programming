@@ -160,7 +160,7 @@ and returns `-1` instead of continuing. Only when both pipes and `fork()` succee
 **Why this is robust:**  
 This prevents the controller from continuing with partially created pipes or a missing child process, and it avoids leaking file descriptors during disk initialization or restart.
 
-## 5.6.3. Writing to a closed or broken pipe
+## 5.6.2. Writing to a closed or broken pipe
 
 **Bad behaviour:**  
 After a disk process is terminated (via `simulate_disk_failure()`), 
@@ -179,7 +179,7 @@ This approach converts a potentially fatal runtime error (broken pipe) into a re
 By combining signal handling, explicit error detection, and automatic disk restoration, 
 the system avoids crashing and maintains data consistency even when a disk process fails.
 
-## 5.6.4. Malformed or incomplete command over a pipe
+## 5.6.3. Malformed or incomplete command over a pipe
 
 **Bad behaviour:**  
 A disk process may receive a malformed command from the controller. 
@@ -198,7 +198,7 @@ This approach ensures that the disk process never executes a partially received 
 By validating both the completeness of the data (via `read_full()`) and 
 the correctness of the command value (via `switch(cmd)`), the system prevents undefined behavior and fails safely when the controller–disk communication protocol is violated.
 
-## 5.6.5. Partial or failed transfer of block data over a pipe
+## 5.6.4. Partial or failed transfer of block data over a pipe
 
 **Bad behaviour:**  
 Even when a disk process is still running and the command itself is valid, a full RAID block may not be transferred in a single `read()` or `write()` call. 
@@ -214,7 +214,7 @@ it reports the error and returns `-1` (calling `restore_disk_process(disk_num)` 
 **Why this is robust:**
 This ensures that only complete blocks of size `block_size` are processed, preventing partial transfers from being treated as valid data.
 
-## 5.6.6. Invalid logical block number supplied to a RAID operation
+## 5.6.5. Invalid logical block number supplied to a RAID operation
 
 **Bad behaviour:**  
 A caller may request a read or write using a logical block number outside the valid RAID data range. 
