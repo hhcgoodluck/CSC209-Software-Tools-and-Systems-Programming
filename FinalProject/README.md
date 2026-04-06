@@ -239,7 +239,7 @@ The RAID system handles failures at multiple levels, including resource initiali
 By consistently checking system call return values, cleaning up resources on failure, and preventing invalid operations from propagating to disk processes, 
 the design ensures that failures are detected early and handled safely. 
 
-# 5.7 Team Contributions
+# 5.7 Project Contributions
 
 This project was completed individually. Core system design, implementation, testing, and documentation were carried out by the author.
 
