@@ -33,23 +33,29 @@ In particular, write operations ensure consistency by updating both data and par
 When a disk failure occurs, the system can reconstruct lost data using parity information and data from the remaining disks, 
 illustrating the fault tolerance mechanism provided by RAID-4.
 
-Interaction Examples with the system through following command-line instructions in order.
+**Typical Interaction Examples (data disk failure and recovery)**
 
-The system operates under a fixed configuration (e.g. 3 data disks, 16-byte block size, and 256-byte disk capacity)
+The system operates under a test configuration (e.g. 3 data disks, 16-byte block size, and 256-byte disk capacity)
 
-- CMD1:  input: `wb 1 data0.txt`   output: Block 1 written to RAID (data0.txt: AAAAAAAAAAAAAAAA)
-- CMD2:  input: `wb 4 data1.txt`   output: Block 4 written to RAID (data1.txt: BBBBBBBBBBBBBBBB)
-- CMD3:  input: `kill 1`    output: disk=1 state=DEAD
-- CMD4:  input: `rb 1`    output: Read failed for logical block 1  Failed to read block from RAID
-- CMD5:  input: `rb 1`    output: AAAAAAAAAAAAAAAA
-- CMD6:  input: `rb 4`    output: BBBBBBBBBBBBBBBB
-- CMD7:  input: `exit`
+Terminal Command: `./raid_sim -n 3 -t simple_test.txt`
 
-This example demonstrates typical system behavior. After a disk failure (`kill 1`), the first read attempt fails and triggers recovery. 
+| Input | Output |
+|------|--------|
+| `wb 1 data0.txt` | Block 1 written to RAID (data0.txt: AAAAAAAAAAAAAAAA) |
+| `wb 4 data1.txt` | Block 4 written to RAID (data1.txt: BBBBBBBBBBBBBBBB) |
+| `kill 1` | disk=1 state=DEAD |
+| `status` | disk=0 state=ALIVE<br>disk=1 state=DEAD<br>disk=2 state=ALIVE<br>disk=3 state=ALIVE |
+| `rb 1` | Read failed for logical block 1<br>Failed to read block from RAID |
+| `rb 1` | AAAAAAAAAAAAAAAA |
+| `rb 4` | BBBBBBBBBBBBBBBB |
+| `exit` | (system checkpoints data and terminates all disk processes) |
+
+This example demonstrates the fault tolerance behavior of RAID-4 system. After a disk failure (`kill 1`), the first read attempt fails and triggers recovery. 
 Subsequent reads succeed, indicating that the failed disk has been restored and data is correctly reconstructed.
 
-## 5.1.4 Visualization Support(Seen in the YouTube Display Video)
+## 5.1.3 Visualization Support(Seen in the YouTube Display Video)
 Additionally, a graphical user interface (`RAID-GUI.py`) is provided to visualize the RAID system state and user interactions.
+And the system operates under a fixed configuration (3 data disks, 16-byte block size, and 256-byte disk capacity)
 
 The GUI displays the RAID-4 block layout, including how data blocks are striped across disks and how parity is maintained on a dedicated disk. 
 It also shows disk status (alive or failed) and highlights read/write operations, allowing users to observe system behavior and 

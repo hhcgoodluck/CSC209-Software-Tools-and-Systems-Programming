@@ -1,0 +1,8 @@
+wb 1 data0.txt
+wb 4 data1.txt
+kill 1
+status
+rb 1
+rb 1
+rb 4
+exit
