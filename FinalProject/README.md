@@ -183,6 +183,25 @@ This approach converts a potentially fatal runtime error (broken pipe) into a re
 By combining signal handling, explicit error detection, and automatic disk restoration, 
 the system avoids crashing and maintains data consistency even when a disk process fails.
 
+## 5.6.4. Malformed or incomplete command over a pipe
+
+**Bad behaviour:**  
+A disk process may receive a malformed command from the controller. 
+This can occur if the command is only partially transmitted through the pipe (e.g., due to communication interruption or premature pipe closure), 
+or if the received command value does not correspond to any valid operation (`CMD_READ`, `CMD_WRITE`, or `CMD_EXIT`).
+
+**How the code handles it:**  
+In `start_disk()`, the disk process reads commands using the helper function `read_full()`, which repeatedly calls `read()` until either the expected number of bytes is received or an error/EOF occurs. 
+After the read, the code checks whether the number of bytes read equals `sizeof(cmd)`. 
+If the read is incomplete, reaches EOF, or fails, the disk reports an error and stops processing further requests. 
+If a full command is received, the code validates it using a `switch(cmd)` statement. 
+Any unrecognized command is handled in the `default` branch, which reports an "Unknown command" error and terminates the request loop safely.
+
+**Why this is robust:**  
+This approach ensures that the disk process never executes a partially received or invalid command. 
+By validating both the completeness of the data (via `read_full()`) and 
+the correctness of the command value (via `switch(cmd)`), the system prevents undefined behavior and fails safely when the controller–disk communication protocol is violated.
+
 ## 5.6.4. Short read or failed read from a pipe
 
 **Bad behaviour:**  

@@ -17,6 +17,7 @@
 #include "raid.h"
 
 static int checkpoint_disk(char *disk_data, int id);
+
 int debug = 1;  // Set to 1 to enable debug output, 0 to disable
 
 /* Read exactly count bytes unless EOF/error happens.
