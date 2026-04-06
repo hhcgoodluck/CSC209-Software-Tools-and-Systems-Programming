@@ -125,20 +125,31 @@ and tightly integrates failure detection into the communication layer.
 
 This project uses the Category 1 multi-process model, where a parent process manages multiple worker processes using pipes.
 
-The parent process in `controller.c` creates one child process for each disk by calling `fork()` in `init_disk()` during initialization. Each child process represents a disk and runs in a loop waiting for commands from the parent.
+### Process Creation
 
-After being created, each child process immediately calls `read()` on its pipe and blocks until it receives a command. Because of this, the parent can assume that all workers are ready once they have been successfully forked.
+The parent process in `controller.c` acts as the RAID controller. During initialization, it creates one child process for each disk by calling `fork()` inside `init_disk()`. Each child process represents a disk and is responsible for handling read and write requests.
 
-Each disk process runs independently, so multiple disk operations can proceed at the same time.
+### Worker Readiness
 
-Communication between the parent and each disk process is done using two pipes: one for sending commands to the disk, and one for receiving results from the disk.
+After being created, each child process enters a loop where it waits for commands from the parent. It calls `read()` on its input pipe and blocks until a command is received. Because of this blocking behavior, the parent process can assume that all workers are ready once they have been successfully forked.
 
-Pipes also provide synchronization. A `read()` call blocks until data is available, which ensures that commands are handled in order. The parent may also block when waiting for responses.
+### Concurrent Execution
 
-During shutdown, the parent sends exit commands to all disk processes and then calls `wait()` once for each child in `checkpoint_and_wait()`. This ensures that all child processes are properly collected and no zombie processes remain.
+Each disk process runs independently, so multiple disk operations can proceed at the same time. For example, different disks may handle read or write requests concurrently when the controller issues operations.
 
-Overall, the system achieves concurrency using multiple processes, with communication and coordination handled through pipes.
+### Communication
 
+Communication between the parent and each disk process is implemented using two pipes: one pipe (`to_disk`) for sending commands and data to the disk, and one pipe (`from_disk`) for receiving results from the disk. The controller writes requests into the pipe, and the disk process reads and executes them.
+
+### Synchronization
+
+Pipes also provide synchronization. A `read()` call blocks until enough data is available, ensuring that each disk processes one complete command at a time and in the correct order. The parent process may also block when reading responses, ensuring correct coordination.
+
+### Process Collection
+
+During shutdown, the parent process sends exit commands to all disk processes and then calls `wait()` once for each child in `checkpoint_and_wait()`. This ensures that all child processes are properly collected and no zombie processes remain.
+
+Overall, the system achieves concurrency by running multiple disk processes in parallel, with communication and coordination handled through pipes.
 
 
 
