@@ -241,7 +241,7 @@ the design ensures that failures are detected early and handled safely.
 
 # 5.7 Project Contributions
 
-This project was completed individually. Core system design, implementation, testing, and documentation were carried out by the author.
+This project was completed individually. All core system design, implementation, testing, and documentation were carried out by the author.
 
 
 
