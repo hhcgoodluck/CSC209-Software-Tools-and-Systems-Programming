@@ -66,16 +66,13 @@ understand how data and parity are managed during normal operation and failure s
 
 
 # 5.2 Build Instructions
-
 The project can be compiled using the provided Makefile. 
 No additional dependencies are required beyond a standard C compiler (e.g.`gcc`).
----
 
 #### Compilation
 To build the program, run the command: `make`. 
 This command compiles all source files (raid_sim.c, controller.c, disk_sim.c) and generate executable files.
 To remove compiled files and reset the build environment: `make clean`
----
 
 #### Input Files
 The project requires the following input files:
@@ -85,8 +82,6 @@ The project requires the following input files:
 
 All input files must be located in the working directory before running the program.
 
----
-
 #### Running the Program
 The RAID simulator can be executed in two modes.
 
@@ -95,7 +90,6 @@ This starts an interactive shell where users can manually enter commands.
 
 - **Transaction File Mode**: Run the program with a predefined sequence of commands `./raid_sim -n 3 -t simple_test.txt`.
 This executes all commands listed in simple_test.txt automatically.
----
 
 #### Command-Line Arguments
 The program supports the following optional command arguments:
