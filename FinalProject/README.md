@@ -1,9 +1,5 @@
 # 5.1 Project Overview
 
-This project implements a simulation of a RAID-4 storage system at the block level. The system is designed to provide fault tolerance and data reliability by distributing data blocks across multiple disks and maintaining a dedicated parity disk. In this simulation, each disk is represented by a separate child process, while a central controller (the parent process) coordinates all operations.
-
-The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system. It supports both an interactive shell-like interface and a transaction file interface, allowing users to issue commands either manually or through predefined input files. The system operates on fixed-size data blocks, and all operations are performed at the block level rather than at the file system level.
-
 The RAID simulator supports the following core operations:
 - **Write Block (`wb <block_num> <filename>`)**: Reads `block_size` bytes from a local file and writes the data to the specified logical block in the RAID system. This operation also updates the parity block to maintain consistency.
 - **Read Block (`rb <block_num>`)**: Retrieves the data stored in a given logical block and prints it to standard output.
@@ -35,47 +31,47 @@ which ensures proper coordination and consistency across the system.
 
 ## 5.1.2 User Interaction and Interfaces
 
-The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system. It supports both:
-- an interactive shell-like interface
-- a transaction file interface
+The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system.
 
+It supports both: **interactive shell-like interface** and **transaction file interface**, 
 allowing users to issue commands either manually or through predefined input files.
 
 The system operates on fixed-size data blocks, and all operations are performed at the block level rather than at the file system level.
 
-### 5.1.3 Core Functionality
+## 5.1.3 Core Functionality
 
-The RAID simulator supports block-level reads and writes, parity updates, and disk failure simulation.
+The RAID simulator supports core block-level operations including reads and writes, parity updates, and disk failure simulation, as follows:
 
-A write operation reads data from a local file and updates both the target data block and the corresponding parity block to maintain consistency.  
-A read operation retrieves the requested block and prints it to standard output.
+- **Write Block (`wb <block_num> <filename>`)**: Reads `block_size` bytes from a local file and writes the data to the specified logical block in the RAID system. 
+    This operation also updates the corresponding parity block to maintain consistency.
+- **Read Block (`rb <block_num>`)**: Retrieves the data stored in a given logical block and prints it to standard output.
+- **Simulate Disk Failure (`kill <disk_num>`)**: Sends a `SIGINT` signal to terminate a disk process, simulating a disk failure scenario.
+- **Exit (`exit`)**: Sends a checkpoint command to all disk processes, causing them to write their data to disk files and terminate gracefully.
 
-The system also allows users to simulate disk failures by terminating a disk process. 
-When a failure occurs, the controller can reconstruct lost data using parity information and data from the remaining disks, 
-demonstrating the fundamental fault tolerance mechanism of RAID-4 systems.
+These operations collectively demonstrate the behavior of a RAID-4 system. 
+In particular, write operations ensure consistency by updating both data and parity blocks, while read operations retrieve data from the appropriate disk. 
+When a disk failure occurs, the system can reconstruct lost data using parity information and data from the remaining disks, 
+illustrating the fault tolerance mechanism provided by RAID-4.
 
 ## 5.1.4 Input and Output Behavior
-
-Users interact with the system through command-line instructions such as:
-`wb`, `rb`, `kill`, `status`, and `exit`
+Users interact with the system through command-line instructions such as `wb`, `rb`, `kill`, `status`, and `exit`.
 
 These commands can be entered interactively or provided via a transaction file.
-- **Input:** command instructions and optional data files for write operations
-- **Output:** retrieved block data (e.g., `AAAAAAAAAAAAAAAA`), system status messages, and error logs
+- **Input:** command instructions (e.g.`rb 0`, `kill 0`) and optional data files used for write operations (e.g.`wb 0 data0.txt`)
+- **Output:** retrieved block data (e.g.`AAAAAAAAAAAAAAAA`), system status messages (e.g.`disk=0 state=ALIVE`), and error logs (e.g.`Read failed for logical block 0`)
 
 This interaction model allows users to observe system behavior, including disk failures and subsequent data recovery.
 
 ## 5.1.5 Visualization Support
-
 Additionally, a graphical user interface (`RAID-GUI.py`) is provided to visualize the RAID system state and user interactions.
 
-The GUI displays disk status, block layouts, and highlights read/write operations, offering an intuitive view of how data and parity are managed across disks.
-
+The GUI displays the RAID-4 block layout, including how data blocks are striped across disks and how parity is maintained on a dedicated disk. 
+It also shows disk status (alive or failed) and highlights read/write operations, allowing users to observe system behavior and 
+understand how data and parity are managed during normal operation and failure scenarios.
 
 ## 5.1.6 Summary
-
-Overall, this project demonstrates how redundancy, process coordination, and inter-process communication can be combined to build a reliable storage system at the block level, reflecting the core principles of RAID architectures.
-
+Overall, this project demonstrates how redundancy (parity check), process coordination, and inter-process communication can be combined to build a reliable storage system. 
+Through block-level operations, parity-based recovery, and disk failure simulation, the system illustrates the core principles of fault tolerance in RAID-4 architectures.
 
 
 # 5.3 Architecture Diagram
