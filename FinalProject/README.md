@@ -23,23 +23,11 @@ Additionally, a graphical user interface (GUI.py) is provided to visualize the R
 
 
 
+# 5.3 Architecture Diagram
 
+![图1.png](architecture_diagram/%E5%9B%BE1.png)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+![图2.png](architecture_diagram/%E5%9B%BE2.png)
 
 
 
