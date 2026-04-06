@@ -1,11 +1,12 @@
 # 5.1 Project Overview
+This project implements a simulation of a RAID-4 storage system at the block level.
+The system is designed to provide fault tolerance and data reliability by distributing data blocks across multiple disks and maintaining a dedicated parity disk.
 
-This project implements a simulation of a RAID-4 storage system at the block level. 
-The system is designed to provide fault tolerance and data reliability by distributing data blocks across multiple disks and maintaining a dedicated parity disk. 
-In this simulation, each disk is represented by a separate child process, while a central controller (the parent process) coordinates all operations.
+In this simulation, each disk is represented by a separate child process, while a central controller coordinates all operations through inter-process communication. 
+By supporting block-level read and write operations, parity-based recovery, and disk failure simulation, 
+the system demonstrates how redundancy, process coordination, and IPC work together to achieve reliable storage in RAID-4 architectures.
 
 ## 5.1.1 System Design and Implementation
-
 The project belongs to the domain of systems programming and demonstrates key concepts such as process creation using `fork`, inter-process communication (IPC) via pipes, and low-level data management.
 
 Internally, the controller communicates with disk processes through pipes, sending commands and receiving results. 
@@ -13,7 +14,6 @@ Each disk process continuously listens for requests such as read, write, and exi
 which ensures proper coordination and consistency across the system.
 
 ## 5.1.2 User Interaction and Interfaces
-
 The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system.
 
 It supports both: **interactive shell-like interface** and **transaction file interface**, 
@@ -22,7 +22,6 @@ allowing users to issue commands either manually or through predefined input fil
 The system operates on fixed-size data blocks, and all operations are performed at the block level rather than at the file system level.
 
 ## 5.1.3 Core Functionality
-
 The RAID simulator supports core block-level operations including reads and writes, parity updates, and disk failure simulation, as follows:
 
 - **Write Block (`wb <block_num> <filename>`)**: Reads `block_size` bytes from a local file and writes the data to the specified logical block in the RAID system. 
@@ -51,11 +50,6 @@ Additionally, a graphical user interface (`RAID-GUI.py`) is provided to visualiz
 The GUI displays the RAID-4 block layout, including how data blocks are striped across disks and how parity is maintained on a dedicated disk. 
 It also shows disk status (alive or failed) and highlights read/write operations, allowing users to observe system behavior and 
 understand how data and parity are managed during normal operation and failure scenarios.
-
-## 5.1.6 Summary
-Overall, this project demonstrates how redundancy (parity check), process coordination, and inter-process communication can be combined to build a reliable storage system. 
-Through block-level operations, parity-based recovery, and disk failure simulation, the system illustrates the core principles of fault tolerance in RAID-4 architectures.
-
 
 # 5.3 Architecture Diagram
 
