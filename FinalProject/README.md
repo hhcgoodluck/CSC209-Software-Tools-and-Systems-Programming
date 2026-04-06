@@ -15,7 +15,6 @@ which ensures proper coordination and consistency across the system.
 ## 5.1.2 User Interaction and Interfaces
 
 The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system.
-
 It supports both: **interactive shell-like interface** and **transaction file interface**, 
 allowing users to issue commands either manually or through predefined input files.
 
