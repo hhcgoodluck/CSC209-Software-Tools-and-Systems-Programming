@@ -123,7 +123,7 @@ and tightly integrates failure detection into the communication layer.
 
 ## 5.5 Concurrency Model
 
-This project uses the Category 1 multi-process model, where a parent process manages multiple worker processes using pipes.
+This project uses the Category One multi-process model, where a parent process manages multiple worker processes using pipes.
 
 **Process Creation**  
 The parent process in `controller.c` creates all disk processes during initialization in `init_all_controllers()`. It calls `init_disk(i)` for each disk, where two pipes (`to_disk` and `from_disk`) are created and `fork()` is executed. Each child process then starts execution in `start_disk()` and represents one disk.
