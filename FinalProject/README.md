@@ -94,7 +94,7 @@ Thus, the protocol seen by the child remains a simple block-write protocol.
 | **Response** | No explicit data response is required. The parent observes termination by waiting for child processes using `wait()`. |
 | **Error handling** | In `checkpoint_and_wait()`, if the parent cannot successfully send `CMD_EXIT` to a disk, it prints a warning and continues shutdown. Since this is a final cleanup phase, the implementation treats these failures as non-fatal. |
 
-This matches the specification: the user-level `exit` command causes the controller to send checkpoint commands to all disks 
+This matches the specification that the user-level `exit` command causes the controller to send checkpoint commands to all disks 
 and then wait for the child processes to terminate.
 ## 5.4.4 Failure-Triggered Recovery as Part of the Protocol
 
