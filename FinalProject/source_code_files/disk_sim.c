@@ -60,7 +60,6 @@ static ssize_t write_full(int fd, const void *buf, size_t count) {
     return (ssize_t)total;
 }
 
-
 /*
  * Main function for the disk simulation process, which runs in a child process
  * created by the RAID controller.

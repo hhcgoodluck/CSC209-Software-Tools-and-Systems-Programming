@@ -25,7 +25,6 @@
  * for each disk.
  */
 
-
 static disk_controller_t* controllers;
 
 /* Global array to store information about
@@ -372,19 +371,21 @@ int write_block_to_disk(int block_num, char *data, int parity_flag) {
 
     int disk_num;
     if (parity_flag == 1) {
-        disk_num = num_disks;   // parity disk
+		// parity disk
+        disk_num = num_disks;
     } else {
+		// data disk
         disk_num = block_num % num_disks;
     }
 
     disk_command_t cmd = CMD_WRITE;
 
-    /* block number within one individual disk = stripe index */
+    // block number within one individual disk = stripe index
     int disk_block_num = block_num / num_disks;
 
     ssize_t n;
 
-    /* Send command */
+    // Send command
     n = write(controllers[disk_num].to_disk[1], &cmd, sizeof(cmd));
     if (n == -1) {
         restore_disk_process(disk_num);
@@ -395,7 +396,7 @@ int write_block_to_disk(int block_num, char *data, int parity_flag) {
         return -1;
     }
 
-    /* Send block number */
+    // Send block number
     n = write(controllers[disk_num].to_disk[1], &disk_block_num, sizeof(disk_block_num));
     if (n == -1) {
         restore_disk_process(disk_num);
@@ -406,7 +407,7 @@ int write_block_to_disk(int block_num, char *data, int parity_flag) {
         return -1;
     }
 
-    /* Send block data */
+    // Send block data
     size_t bytes_written_total = 0;
     while (bytes_written_total < (size_t)block_size) {
         n = write(controllers[disk_num].to_disk[1],
@@ -451,7 +452,7 @@ int write_block(int block_num, char *data) {
     snprintf(msg, sizeof(msg), "Received write request for logical block %d", block_num);
     log_flow(msg);
 
-    /* block_num refers only to logical data blocks, not the parity disk */
+    // block_num refers only to logical data blocks, not the parity disk
     if (block_num < 0 || block_num >= total_logical_blocks) {
         log_error("Invalid logical block number for write");
         return -1;
@@ -747,7 +748,7 @@ static int is_disk_alive(int disk_num) {
 void print_disk_status(void) {
     char msg[128];
 
-    for (int i = 0; i < num_disks + 1; i++) {   // 如果最后一个是 parity disk
+    for (int i = 0; i < num_disks + 1; i++) {
         pid_t pid = controllers[i].pid;
         const char *state = is_disk_alive(i) ? "ALIVE" : "DEAD";
 
