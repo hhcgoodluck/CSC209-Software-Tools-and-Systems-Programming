@@ -131,14 +131,14 @@ The parent process in `controller.c` acts as the RAID controller. During initial
 - Worker Readiness:
 After being created, each child process enters a loop where it waits for commands from the parent. It calls `read()` on its input pipe and blocks until a command is received. Because of this blocking behavior, the parent process can assume that all workers are ready once they have been successfully forked.
 
-- Concurrent Execution
+- Concurrent Execution:
 Each disk process runs independently, so multiple disk operations can proceed at the same time. For example, different disks may handle read or write requests concurrently when the controller issues operations.
 
 - Communication:
 Communication between the parent and each disk process is implemented using two pipes: one pipe (`to_disk`) for sending commands and data to the disk, and one pipe (`from_disk`) for receiving results from the disk. The controller writes requests into the pipe, and the disk process reads and executes them.
 
 - Synchronization:
-Pipes also provide synchronization. A `read()` call blocks until enough data is available, ensuring that each disk processes one complete command at a time and in the correct order. The parent process may also block when reading responses, ensuring correct coordination.
+Pipes also provide synchronization. A `read()` call blocks until enough data is available, ensuring that commands are processed in the correct order. The parent process may also block when reading responses, ensuring correct coordination.
 
 - Process Collection:
 During shutdown, the parent process sends exit commands to all disk processes and then calls `wait()` once for each child in `checkpoint_and_wait()`. This ensures that all child processes are properly collected and no zombie processes remain.
