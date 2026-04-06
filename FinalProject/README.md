@@ -48,11 +48,11 @@ Additionally, a graphical user interface (GUI.py) is provided to visualize the R
 
 # 5.4 Communication Protocol
 
-Communication between the RAID controller (parent process) and each disk process (child process) is implemented using two dedicated pipes per disk. 
-For disk `i`, the parent writes requests on `controllers[i].to_disk[1]`, and reads responses from `controllers[i].from_disk[0]`. 
-The child uses the opposite ends of these same pipes. This design matches the Category 1 requirement that all significant inter-process communication travel through pipes. 
-The simulator supports three command types at the disk level: `CMD_READ`, `CMD_WRITE`, and `CMD_EXIT`. 
-At the user level, these commands are triggered by the higher-level RAID operations `rb`, `wb`, `kill`, and `exit`.
+Communication between the RAID controller (parent process) and each disk process (child process) is implemented using two dedicated pipes per disk.
+For disk `i`, the controller sends requests through `controllers[i].to_disk[1]` and receives responses from `controllers[i].from_disk[0]`, while the child uses the corresponding opposite ends.
+
+The system supports three disk-level commands: `CMD_READ`, `CMD_WRITE`, and `CMD_EXIT`.
+These commands are issued by the controller in response to higher-level RAID operations such as `rb`, `wb`, `kill`, and `exit`.
 
 ## 5.4.1 Message Type: Read Request
 
@@ -112,7 +112,10 @@ all data blocks in the stripe. This recovery logic is implemented in `restore_di
 
 ## 5.4.5 Summary
 
-Overall, the protocol is a small binary command protocol over pipes. Each message type is self-delimiting because the receiver knows, from the command opcode, exactly what fields must follow and how many bytes each field occupies. `CMD_READ` is followed by one integer and produces a fixed-size block response; `CMD_WRITE` is followed by one integer and one fixed-size block payload; `CMD_EXIT` consists only of the opcode. This design keeps the disk processes simple, makes synchronization natural through blocking `read()` calls, and integrates failure detection directly into the communication layer.
+Overall, the protocol is a compact, opcode-driven binary protocol over pipes.
+Each message is self-delimiting, as the command opcode determines both the structure and length of the remaining fields.
+This design simplifies the disk processes, enables natural synchronization through blocking I/O,
+and tightly integrates failure detection into the communication layer.
 
 
 
