@@ -202,16 +202,21 @@ This approach ensures that the disk process never executes a partially received 
 By validating both the completeness of the data (via `read_full()`) and 
 the correctness of the command value (via `switch(cmd)`), the system prevents undefined behavior and fails safely when the controller–disk communication protocol is violated.
 
-## 5.6.4. Short read or failed read from a pipe
+## 5.6.5. Partial or failed transfer of block data over a pipe
 
 **Bad behaviour:**  
-A `read()` from a pipe may fail, return `0`, or return fewer bytes than expected. This can happen if the child process exits early or if communication is interrupted.
+Even when a disk process is still running and the command itself is valid, a full RAID block may not be transferred in a single `read()` or `write()` call. 
+This means the controller could receive or send only part of the `block_size` bytes for a block, which would make the block contents incomplete.
 
-**How the code handles it:**  
-The controller does not assume that one `read()` call will always return a full block. It checks the return value of `read()` and uses loops when necessary to continue reading until the required number of bytes has been received. If `read()` returns `<= 0` before the full message is collected, the code treats the operation as a failure and returns an error.
+**How the code handles it:**   
+This case is handled in `read_block_from_disk()` and `write_block_to_disk()`. 
+Function `read_block_from_disk()` repeatedly reads from the pipe until `bytes_read_total` reaches `block_size`, instead of assuming one `read()` is enough. 
+If `read()` returns `<= 0`, it reports an error and returns `-1`. 
+Function `write_block_to_disk()` uses the same strategy for block data writes, it loops until `bytes_written_total` reaches `block_size`, and if `write()` fails, 
+it reports the error and returns `-1` (calling `restore_disk_process(disk_num)` when `write()` returns `-1`).
 
-**Why this is robust:**  
-This prevents the controller from using incomplete block data or uninitialized memory. It also makes the protocol reliable even when pipe reads are fragmented.
+**Why this is robust:**
+This ensures that only complete blocks of size `block_size` are processed, preventing partial transfers from being treated as valid data.
 
 ## 5.6.5. Invalid block number supplied to controller functions
 
