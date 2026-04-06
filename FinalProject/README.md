@@ -48,7 +48,7 @@ Additionally, a graphical user interface (GUI.py) is provided to visualize the R
 
 # 5.4 Communication Protocol
 
-Communication between the RAID controller (parent process) and each disk process (child process) is implemented using two dedicated pipes per disk. For disk `i`, the parent writes requests on `controllers[i].to_disk[1]`, and reads responses from `controllers[i].from_disk[0]`. The child uses the opposite ends of these same pipes. This design matches the Category 1 requirement that all significant inter-process communication travel through pipes. The simulator supports three command types at the disk level: `CMD_READ`, `CMD_WRITE`, and `CMD_EXIT`. At the user level, these commands are triggered by the higher-level RAID operations `rb`, `wb`, `kill`, and `exit`. :contentReference[oaicite:1]{index=1} :contentReference[oaicite:2]{index=2}
+Communication between the RAID controller (parent process) and each disk process (child process) is implemented using two dedicated pipes per disk. For disk `i`, the parent writes requests on `controllers[i].to_disk[1]`, and reads responses from `controllers[i].from_disk[0]`. The child uses the opposite ends of these same pipes. This design matches the Category 1 requirement that all significant inter-process communication travel through pipes. The simulator supports three command types at the disk level: `CMD_READ`, `CMD_WRITE`, and `CMD_EXIT`. At the user level, these commands are triggered by the higher-level RAID operations `rb`, `wb`, `kill`, and `exit`.
 
 ## 5.4.1 Message Type: Read Request
 
