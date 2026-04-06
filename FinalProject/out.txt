@@ -1,3 +1,0 @@
-wb
-[CMD] wb 999 <file>
-[FLOW] Received write request for logical block 999
