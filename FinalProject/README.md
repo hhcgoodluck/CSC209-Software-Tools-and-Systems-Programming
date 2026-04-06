@@ -121,24 +121,35 @@ and tightly integrates failure detection into the communication layer.
 
 
 
+## 5.5 Concurrency Model
+
+This project follows the Category 1 multi-process concurrency model using pipes, where a single parent process coordinates multiple worker processes executing concurrently.
+
+The parent process, implemented in `controller.c`, acts as the central controller of the RAID system. 
+It is responsible for initializing disk processes, managing communication, and coordinating read and write operations across disks.
+
+During system initialization, the parent process creates each disk process by calling `fork()` within `init_disk()`. 
+Each child process represents a disk and immediately enters a command-processing loop after being created.
+
+No explicit readiness signal is required for worker processes. 
+After forking, each child blocks on a `read()` call from its input pipe, waiting for commands from the controller. 
+This blocking behavior ensures that the worker is idle and ready to receive requests, allowing the parent process to safely assume that all disk processes are ready once they have been successfully forked.
+
+Each disk is implemented as an independent process, and multiple disk processes execute concurrently at runtime. 
+This satisfies the requirement that several worker processes operate simultaneously.
+
+Communication between the controller and disk processes is implemented exclusively using pipes. 
+For each disk, two pipes are established: one for sending commands and data from the controller to the disk, and one for receiving responses from the disk. This unidirectional pipe design ensures clear separation of request and response channels.
+
+Pipes also serve as the primary synchronization mechanism. When a disk process calls `read()` on its input pipe, it blocks until a complete command is available, ensuring that commands are processed in order. 
+Similarly, the controller may block when reading responses from disk processes. 
+This implicit synchronization guarantees correct sequencing of operations without requiring additional mechanisms such as shared memory or locks.
+
+Child processes are collected during system shutdown in `checkpoint_and_wait()`. The controller sends termination commands to all disk processes and then calls `wait()` once per child process. This ensures that all child processes are properly reaped and prevents the creation of zombie processes.
+
+Overall, this design achieves concurrent execution of multiple worker processes, coordinated by a single parent process, with both communication and synchronization handled entirely through pipes.
 
 
-
-
-
-# 5.5 Concurrency Model
-
-This project follows the Category 1 multi-process model using pipes, where a parent process coordinates multiple worker processes executing concurrently.
-
-The parent process, implemented in `controller.c`, acts as the central controller of the RAID system. It is responsible for initializing all disk processes using `fork()`, managing communication, and coordinating read and write operations across disks.
-
-Each disk in the RAID system is implemented as a separate child process (worker). These disk processes are created during system initialization and remain active throughout execution. At runtime, multiple disk processes operate concurrently, satisfying the requirement that at least three worker processes run simultaneously.
-
-Communication between the controller and disk processes is implemented using pipes. For each disk process, two pipes are established: one for sending commands and data from the controller to the disk, and one for receiving responses from the disk. This design ensures that all inter-process communication occurs through pipes, as required.
-
-Pipes also serve as a synchronization mechanism. When a disk process calls `read()` on a pipe, it blocks until data is available, ensuring that commands are processed in the correct order. Similarly, the controller may block while waiting for responses from disk processes. This implicit synchronization avoids the need for additional coordination mechanisms such as shared memory or explicit locks.
-
-Overall, this design achieves concurrent execution of multiple worker processes, coordinated by a single parent process, with all communication and synchronization handled through pipes.
 
 
 
