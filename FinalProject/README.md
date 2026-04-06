@@ -60,7 +60,7 @@ These commands are issued by the controller in response to higher-level RAID ope
 |---|---|
 | **Sender and receiver** | Parent (controller) → child disk process |
 | **Encoding** | Two fixed-width binary values are written in sequence: first a `disk_command_t` with value `CMD_READ`, then an `int` containing the block number **within that disk**. |
-| **Semantics** | The controller converts a logical RAID block number into a target disk and an in-disk block index before sending the request. For a data read, the target disk is `block_num % num_disks`; for a parity read, the target disk is `num_disks`. In both cases, the block number sent to the child is `block_num / num_disks`, i.e., the stripe index. The child must therefore interpret the message as: “read block `disk_block_num` from your local disk image and return exactly `block_size` bytes.” |
+| **Semantics** | The controller converts a logical RAID block number into a target disk and an in-disk block index before sending the request. For a data read, the target disk is `block_num % num_disks`; for a parity read, the target disk is `num_disks`. In both cases, the block number sent to the child is `block_num / num_disks`, i.e., the stripe index. The child must therefore interpret the message as: “read block `disk_block_num` from your local disk image and return exactly `block_size` bytes. |
 | **Response** | Child disk process → parent. The child sends back exactly `block_size` bytes containing the requested block data. The parent repeatedly calls `read()` until all `block_size` bytes have been received. |
 | **Error handling** | If either write of the request fails with `-1`, the controller treats this as disk failure, calls `restore_disk_process(disk_num)`, and returns failure for the current operation. If the response cannot be read completely (for example, `read()` returns `<= 0` before `block_size` bytes are collected), the operation also fails. |
 
@@ -123,28 +123,28 @@ and tightly integrates failure detection into the communication layer.
 
 ## 5.5 Concurrency Model
 
-This project uses the Category One multi-process model, where a parent process manages multiple worker processes using pipes.
+This project uses the Category 1 multi-process model, where a parent process manages multiple worker processes using pipes.
 
-- Process Creation:
-The parent process in `controller.c` acts as the RAID controller. During initialization, it creates one child process for each disk by calling `fork()` inside `init_disk()`. Each child process represents a disk and is responsible for handling read and write requests.
+**Process Creation**  
+The parent process in `controller.c` creates all disk processes during initialization in `init_all_controllers()`. It calls `init_disk(i)` for each disk, where two pipes (`to_disk` and `from_disk`) are created and `fork()` is executed. Each child process then starts execution in `start_disk()` and represents one disk.
 
-- Worker Readiness:
-After being created, each child process enters a loop where it waits for commands from the parent. It calls `read()` on its input pipe and blocks until a command is received. Because of this blocking behavior, the parent process can assume that all workers are ready once they have been successfully forked.
+**Worker Readiness**  
+There is no explicit ready signal. After `fork()`, each child process enters `start_disk()` and immediately waits for commands by reading from its pipe. Since the child is already blocked waiting for input, the parent can assume that all workers are ready once they have been successfully created.
 
-- Concurrent Execution:
-Each disk process runs independently, so multiple disk operations can proceed at the same time. For example, different disks may handle read or write requests concurrently when the controller issues operations.
+**Concurrent Execution**  
+All disk processes run independently as separate processes. They remain active throughout execution, while the parent coordinates disk operations through functions such as `read_block_from_disk()` and `write_block_to_disk()`.
 
-- Communication:
-Communication between the parent and each disk process is implemented using two pipes: one pipe (`to_disk`) for sending commands and data to the disk, and one pipe (`from_disk`) for receiving results from the disk. The controller writes requests into the pipe, and the disk process reads and executes them.
+**Communication and Synchronization**  
+Communication is handled through pipes using `read_block_from_disk()` and `write_block_to_disk()`.
+- In `read_block_from_disk()`, the parent sends `CMD_READ` and a block number through `to_disk`, then reads the result from `from_disk`.
+- In `write_block_to_disk()`, the parent sends `CMD_WRITE`, the block number, and the data block through `to_disk`.
 
-- Synchronization:
-Pipes also provide synchronization. A `read()` call blocks until enough data is available, ensuring that commands are processed in the correct order. The parent process may also block when reading responses, ensuring correct coordination.
+On the child side, `start_disk()` continuously reads commands from the pipe and executes them. Because both sides follow a fixed read/write order, pipes ensure that commands are processed in the correct order without additional synchronization.
 
-- Process Collection:
-During shutdown, the parent process sends exit commands to all disk processes and then calls `wait()` once for each child in `checkpoint_and_wait()`. This ensures that all child processes are properly collected and no zombie processes remain.
+**Process Collection**  
+Child processes are collected in `checkpoint_and_wait()`. The parent sends `CMD_EXIT` to each disk process and then calls `wait()` once per child to ensure that all processes terminate correctly. In failure cases, `simulate_disk_failure()` uses `waitpid()` to collect a specific disk process.
 
-Overall, the system achieves concurrency by running multiple disk processes in parallel, with communication and coordination handled through pipes.
-
+Overall, concurrency is achieved by maintaining multiple disk processes, while the parent process coordinates their execution through well-defined functions and pipe-based communication.
 
 
 
