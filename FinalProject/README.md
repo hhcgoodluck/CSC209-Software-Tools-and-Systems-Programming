@@ -234,19 +234,14 @@ This prevents malformed RAID requests from propagating into the controller–dis
 By rejecting invalid logical block numbers early, the code avoids incorrect disk selection, invalid stripe offsets, and unnecessary child-process communication.
 
 ## 5.6 Conclusion
-The main robustness strategy in this project is to treat every important system call as potentially fallible. In particular, the implementation checks the results of `pipe()`, `fork()`, `read()`, `write()`, and process cleanup operations. When an error occurs, the code reports it, closes any no-longer-needed file descriptors, avoids continuing in an inconsistent state, and returns an error code to the caller. This makes the simulator much more reliable as a multi-process system program.
 
-
-
-
-
-
-
+The RAID system handles failures at multiple levels, including resource initialization, inter-process communication, data transfer, and input validation. 
+By consistently checking system call return values, cleaning up resources on failure, and preventing invalid operations from propagating to disk processes, 
+the design ensures that failures are detected early and handled safely. 
 
 # 5.7 Team Contributions
-By myself
 
-
+This project was completed individually. Core system design, implementation, testing, and documentation were carried out by the author.
 
 
 
