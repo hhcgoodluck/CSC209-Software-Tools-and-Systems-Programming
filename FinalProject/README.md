@@ -19,7 +19,62 @@ Overall, this project belongs to the category of systems programming and demonst
 Additionally, a graphical user interface (GUI.py) is provided to visualize the RAID system state and user interactions.
 
 
+# 5.1 Project Overview
 
+This project implements a simulation of a RAID-4 storage system at the block level. 
+The system is designed to provide fault tolerance and data reliability by distributing data blocks across multiple disks and maintaining a dedicated parity disk. 
+In this simulation, each disk is represented by a separate child process, while a central controller (the parent process) coordinates all operations.
+
+## 5.1.1 System Design and Implementation
+
+The project belongs to the domain of systems programming and demonstrates key concepts such as process creation using `fork`, inter-process communication (IPC) via pipes, and low-level data management.
+
+Internally, the controller communicates with disk processes through pipes, sending commands and receiving results. 
+Each disk process continuously listens for requests such as read, write, and exit, executes them, and returns responses to the controller, 
+which ensures proper coordination and consistency across the system.
+
+## 5.1.2 User Interaction and Interfaces
+
+The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system. It supports both:
+- an interactive shell-like interface
+- a transaction file interface
+
+allowing users to issue commands either manually or through predefined input files.
+
+The system operates on fixed-size data blocks, and all operations are performed at the block level rather than at the file system level.
+
+### 5.1.3 Core Functionality
+
+The RAID simulator supports block-level reads and writes, parity updates, and disk failure simulation.
+
+A write operation reads data from a local file and updates both the target data block and the corresponding parity block to maintain consistency.  
+A read operation retrieves the requested block and prints it to standard output.
+
+The system also allows users to simulate disk failures by terminating a disk process. 
+When a failure occurs, the controller can reconstruct lost data using parity information and data from the remaining disks, 
+demonstrating the fundamental fault tolerance mechanism of RAID-4 systems.
+
+## 5.1.4 Input and Output Behavior
+
+Users interact with the system through command-line instructions such as:
+`wb`, `rb`, `kill`, `status`, and `exit`
+
+These commands can be entered interactively or provided via a transaction file.
+- **Input:** command instructions and optional data files for write operations
+- **Output:** retrieved block data (e.g., `AAAAAAAAAAAAAAAA`), system status messages, and error logs
+
+This interaction model allows users to observe system behavior, including disk failures and subsequent data recovery.
+
+## 5.1.5 Visualization Support
+
+Additionally, a graphical user interface (`RAID-GUI.py`) is provided to visualize the RAID system state and user interactions.
+
+The GUI displays disk status, block layouts, and highlights read/write operations, offering an intuitive view of how data and parity are managed across disks.
+
+
+## 5.1.6 Summary
+
+Overall, this project demonstrates how redundancy, process coordination, and inter-process communication can be combined to build a reliable storage system at the block level, reflecting the core principles of RAID architectures.
 
 
 
