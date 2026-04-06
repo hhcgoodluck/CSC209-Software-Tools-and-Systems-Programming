@@ -60,7 +60,7 @@ These commands are issued by the controller in response to higher-level RAID ope
 |---|---|
 | **Sender and receiver** | Parent (controller) → child disk process |
 | **Encoding** | Two fixed-width binary values are written in sequence: first a `disk_command_t` with value `CMD_READ`, then an `int` containing the block number **within that disk**. |
-| **Semantics / invariants** | The controller converts a logical RAID block number into a target disk and an in-disk block index before sending the request. For a data read, the target disk is `block_num % num_disks`; for a parity read, the target disk is `num_disks`. In both cases, the block number sent to the child is `block_num / num_disks`, i.e., the stripe index. The child must therefore interpret the message as: “read block `disk_block_num` from your local disk image and return exactly `block_size` bytes.” |
+| **Semantics** | The controller converts a logical RAID block number into a target disk and an in-disk block index before sending the request. For a data read, the target disk is `block_num % num_disks`; for a parity read, the target disk is `num_disks`. In both cases, the block number sent to the child is `block_num / num_disks`, i.e., the stripe index. The child must therefore interpret the message as: “read block `disk_block_num` from your local disk image and return exactly `block_size` bytes.” |
 | **Response** | Child disk process → parent. The child sends back exactly `block_size` bytes containing the requested block data. The parent repeatedly calls `read()` until all `block_size` bytes have been received. |
 | **Error handling** | If either write of the request fails with `-1`, the controller treats this as disk failure, calls `restore_disk_process(disk_num)`, and returns failure for the current operation. If the response cannot be read completely (for example, `read()` returns `<= 0` before `block_size` bytes are collected), the operation also fails. |
 
@@ -74,7 +74,7 @@ This makes it clear to the receiver how many bytes to read and in what order.
 |---|---|
 | **Sender and receiver** | Parent (controller) → child disk process |
 | **Encoding** | Three pieces of data are written in sequence: (1) a `disk_command_t` with value `CMD_WRITE`, (2) an `int` containing the block number within that disk, and (3) exactly `block_size` bytes of payload data. |
-| **Semantics / invariants** | As with reads, the controller first maps the logical RAID block to a specific disk and stripe index. The child must read the command, then read the block number, then read exactly `block_size` bytes and store them in the corresponding block slot of its local disk array. The protocol is position-based: after receiving `CMD_WRITE`, the child knows it must read one integer followed by one full block of bytes. |
+| **Semantics** | As with reads, the controller first maps the logical RAID block to a specific disk and stripe index. The child must read the command, then read the block number, then read exactly `block_size` bytes and store them in the corresponding block slot of its local disk array. The protocol is position-based: after receiving `CMD_WRITE`, the child knows it must read one integer followed by one full block of bytes. |
 | **Response** | No explicit acknowledgment message is sent back on success. Successful completion is inferred from the fact that all writes to the pipe succeed and the child remains alive. |
 | **Error handling** | If any write operation (command, block number, or payload) returns -1, the controller treats this as a disk failure, invokes `restore_disk_process(disk_num)`, and aborts the current write operation. Short writes or zero-byte progress are also treated as errors. For the block payload, the controller uses a loop to ensure that all `block_size` bytes are eventually written.
 
@@ -90,7 +90,7 @@ Thus, the protocol seen by the child remains a simple block-write protocol.
 |---|---|
 | **Sender and receiver** | Parent (controller) → child disk process |
 | **Encoding** | A single fixed-width binary value of type `disk_command_t` with value `CMD_EXIT`. No additional fields follow. |
-| **Semantics / invariants** | Upon receiving `CMD_EXIT`, the disk process exits its command-processing loop. After exiting the loop, it checkpoints its current disk contents to a file (e.g., `disk_X.dat`) and then terminates. Since the command carries no payload, the receiver knows that the message ends immediately after the command value. |
+| **Semantics** | Upon receiving `CMD_EXIT`, the disk process exits its command-processing loop. After exiting the loop, it checkpoints its current disk contents to a file (e.g., `disk_X.dat`) and then terminates. Since the command carries no payload, the receiver knows that the message ends immediately after the command value. |
 | **Response** | No explicit data response is required. The controller observes termination by waiting for all child processes using `wait()`. |
 | **Error handling** | In `checkpoint_and_wait()`, if sending `CMD_EXIT` to a disk fails (e.g., `write()` does not return the expected number of bytes), the controller prints a warning and continues the shutdown process. As this occurs during final cleanup, such failures are treated as non-fatal. |
 
