@@ -96,16 +96,19 @@ Thus, the protocol seen by the child remains a simple block-write protocol.
 
 This matches the specification that the user-level `exit` command causes the controller to send checkpoint commands to all disks 
 and then wait for the child processes to terminate.
+
 ## 5.4.4 Failure-Triggered Recovery as Part of the Protocol
 
-Although disk recovery is not encoded as a separate pipe message type, it is an essential part of the communication protocol 
-because communication failure is how the controller detects that a disk has died. 
-The implementation explicitly ignores `SIGPIPE`, so a failed disk does not terminate the whole controller process. 
-Instead, when a pipe write returns `-1`, the controller closes the stale pipe endpoints, restarts the corresponding disk process with `restart_disk()`, 
-and reconstructs the missing disk contents stripe by stripe using the parity relation. 
-For a failed data disk, the recovered block is computed as the parity block XOR all remaining data blocks in the stripe; 
-for a failed parity disk, the controller rebuilds each parity block by XORing all data blocks in that stripe. 
-This behavior is required by the assignment description and is directly implemented in `restore_disk_process()`. 
+Although disk recovery is not encoded as a separate pipe message type, it is an integral part of the communication protocol.
+In this design, communication failure is used as the mechanism for detecting disk failure.
+
+The controller explicitly ignores `SIGPIPE`, ensuring that a failed disk process does not terminate the entire system.
+Instead, when a `write()` to a disk pipe returns `-1`, the controller interprets this as a disk failure. It then closes the corresponding pipe endpoints,
+restarts the disk process using `restart_disk()`, and reconstructs the missing data.
+
+Recovery is performed stripe by stripe using the parity relation. For a failed data disk, each missing block is reconstructed by XORing
+the parity block with all remaining data blocks in the same stripe. For a failed parity disk, each parity block is recomputed by XORing
+all data blocks in the stripe. This recovery logic is implemented in `restore_disk_process()`.
 
 ## 5.4.5 Summary
 
