@@ -90,12 +90,11 @@ Thus, the protocol seen by the child remains a simple block-write protocol.
 |---|---|
 | **Sender and receiver** | Parent (controller) → child disk process |
 | **Encoding** | A single fixed-width binary value of type `disk_command_t` with value `CMD_EXIT`. No additional fields follow. |
-| **Semantics / invariants** | After reading `CMD_EXIT`, the disk process must checkpoint its disk contents to a file (such as `disk_X.dat`) and then terminate. Since the command contains no payload, the receiver knows that the message ends immediately after the command value. |
-| **Response** | No explicit data response is required. The parent observes termination by waiting for child processes using `wait()`. |
-| **Error handling** | In `checkpoint_and_wait()`, if the parent cannot successfully send `CMD_EXIT` to a disk, it prints a warning and continues shutdown. Since this is a final cleanup phase, the implementation treats these failures as non-fatal. |
+| **Semantics / invariants** | Upon receiving `CMD_EXIT`, the disk process terminates its command-processing loop. After exiting the loop, it checkpoints its current disk contents to a file (e.g., `disk_X.dat`) and then terminates. Since the command carries no payload, the receiver knows that the message ends immediately after the command value. |
+| **Response** | No explicit data response is required. The controller observes termination by waiting for all child processes using `wait()`. |
+| **Error handling** | In `checkpoint_and_wait()`, if the controller fails to send `CMD_EXIT` to a disk (e.g., `write()` does not return the expected number of bytes), it prints a warning and continues the shutdown process. As this occurs during final cleanup, such failures are treated as non-fatal. |
 
-This matches the specification that the user-level `exit` command causes the controller to send checkpoint commands to all disks 
-and then wait for the child processes to terminate.
+At the user level, the `exit` command triggers the controller to send `CMD_EXIT` to all disk processes and wait for their termination.
 
 ## 5.4.4 Failure-Triggered Recovery as Part of the Protocol
 
