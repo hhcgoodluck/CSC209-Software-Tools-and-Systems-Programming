@@ -18,13 +18,14 @@ allowing users to issue commands either manually or through predefined input fil
 
 The system operates on fixed-size data blocks, and all operations are performed at the block level rather than at the file system level.
 
-## 5.1.2 Core Functionality
+## 5.1.2 Core Functionality With I/O Behavior
 The RAID simulator supports core block-level operations including reads and writes, parity updates, and disk failure simulation, as follows:
 
 - **Write Block (`wb <block_num> <filename>`)**: Reads `block_size` bytes from a local file and writes the data to the specified logical block in the RAID system. 
     This operation also updates the corresponding parity block to maintain consistency.
 - **Read Block (`rb <block_num>`)**: Retrieves the data stored in a given logical block and prints it to standard output.
 - **Simulate Disk Failure (`kill <disk_num>`)**: Sends a `SIGINT` signal to terminate a disk process, simulating a disk failure scenario.
+- **Status (`status`)**: Displays the current state of each disk process, allowing users to check whether a disk is alive or has failed.
 - **Exit (`exit`)**: Sends a checkpoint command to all disk processes, causing them to write their data to disk files and terminate gracefully.
 
 These operations collectively demonstrate the behavior of a RAID-4 system. 
@@ -32,16 +33,22 @@ In particular, write operations ensure consistency by updating both data and par
 When a disk failure occurs, the system can reconstruct lost data using parity information and data from the remaining disks, 
 illustrating the fault tolerance mechanism provided by RAID-4.
 
-## 5.1.3 Input and Output Behavior
-Users interact with the system through command-line instructions such as `wb`, `rb`, `kill`, `status`, and `exit`.
+Interaction Examples with the system through following command-line instructions in order.
 
-These commands can be entered interactively or provided via a transaction file.
-- **Input:** command instructions (e.g.`rb 0`, `kill 0`) and optional data files used for write operations (e.g.`wb 0 data0.txt`)
-- **Output:** retrieved block data (e.g.`AAAAAAAAAAAAAAAA`), system status messages (e.g.`disk=0 state=ALIVE`), and error logs (e.g.`Read failed for logical block 0`)
+The system operates under a fixed configuration (e.g. 3 data disks, 16-byte block size, and 256-byte disk capacity)
 
-This interaction model allows users to observe system behavior, including disk failures and subsequent data recovery.
+- CMD1:  input: `wb 1 data0.txt`   output: Block 1 written to RAID (data0.txt: AAAAAAAAAAAAAAAA)
+- CMD2:  input: `wb 4 data1.txt`   output: Block 4 written to RAID (data1.txt: BBBBBBBBBBBBBBBB)
+- CMD3:  input: `kill 1`    output: disk=1 state=DEAD
+- CMD4:  input: `rb 1`    output: Read failed for logical block 1  Failed to read block from RAID
+- CMD5:  input: `rb 1`    output: AAAAAAAAAAAAAAAA
+- CMD6:  input: `rb 4`    output: BBBBBBBBBBBBBBBB
+- CMD7:  input: `exit`
 
-## 5.1.4 Visualization Support
+This example demonstrates typical system behavior. After a disk failure (`kill 1`), the first read attempt fails and triggers recovery. 
+Subsequent reads succeed, indicating that the failed disk has been restored and data is correctly reconstructed.
+
+## 5.1.4 Visualization Support(Seen in the YouTube Display Video)
 Additionally, a graphical user interface (`RAID-GUI.py`) is provided to visualize the RAID system state and user interactions.
 
 The GUI displays the RAID-4 block layout, including how data blocks are striped across disks and how parity is maintained on a dedicated disk. 
