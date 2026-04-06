@@ -167,13 +167,21 @@ This prevents the controller from incorrectly assuming that a worker exists when
 ## 5.6.3. Writing to a closed or broken pipe
 
 **Bad behaviour:**  
-If a disk process has terminated, any later `write()` by the controller to that disk’s pipe may fail because the read end no longer exists.
+After a disk process is terminated (via `simulate_disk_failure()`), 
+the controller may still attempt to send a read or write request to that disk through its pipe. 
+Since the disk process no longer exists, the read end of the pipe is closed, 
+and any subsequent `write()` to `controllers[disk_num].to_disk[1]` results in a broken pipe.
 
 **How the code handles it:**  
-The program ignores `SIGPIPE` so that the controller itself is not killed automatically by the operating system. Instead, it checks whether `write()` returns `-1`. When this happens, the code treats it as a disk communication failure, reports the problem, and stops the current pipe operation safely. In the disk recovery path, this failure can also trigger restoration logic.
+The controller explicitly ignores `SIGPIPE` using `ignore_sigpipe()`, preventing the entire process from being terminated by the operating system when writing to a closed pipe. 
+Instead, `write()` returns `-1`, which is checked in both `read_block_from_disk()` and `write_block_to_disk()`. 
+When such a failure is detected, the code immediately calls `restore_disk_process(disk_num)` to restart the failed disk process and reconstruct its data using RAID-4 parity recovery. 
+The function then returns an error to signal that the current operation did not complete successfully.
 
 **Why this is robust:**  
-Ignoring `SIGPIPE` and checking `write()` explicitly allows the controller to stay alive and handle the failure in code, rather than crashing unexpectedly.
+This approach converts a potentially fatal runtime error (broken pipe) into a recoverable event. 
+By combining signal handling, explicit error detection, and automatic disk restoration, 
+the system avoids crashing and maintains data consistency even when a disk process fails.
 
 ## 5.6.4. Short read or failed read from a pipe
 
