@@ -61,6 +61,49 @@ The GUI displays the RAID-4 block layout, including how data blocks are striped 
 It also shows disk status (alive or failed) and highlights read/write operations, allowing users to observe system behavior and 
 understand how data and parity are managed during normal operation and failure scenarios.
 
+
+
+
+
+# 5.2 Build Instructions
+
+The project can be compiled using the provided Makefile. 
+No additional dependencies are required beyond a standard C compiler (e.g.`gcc`).
+
+## 5.2.1 Compilation
+To build the program, run the command: `make`. 
+This command compiles all source files (raid_sim.c, controller.c, disk_sim.c) and generate executable files.
+
+To remove compiled files and reset the build environment: `make clean`
+
+## 5.2.2 Input Files
+The project requires the following input files:
+
+- A transaction file (e.g.`simple_test.txt`) when using the `-t` option. This file contains a sequence of commands to be executed automatically.
+- Data files used in write operations (e.g. `data0.txt`, `data1.txt`). These files provide the content written to RAID blocks via the `wb` command.
+
+All input files must be located in the working directory before running the program.
+
+## 5.2.3 Running the Program
+The RAID simulator can be executed in two modes.
+
+- **Interactive Mode**: Run the program without a transaction file `./raid_sim`.
+This starts an interactive shell where users can manually enter commands.
+
+- **Transaction File Mode**: Run the program with a predefined sequence of commands `./raid_sim -n 3 -t simple_test.txt`.
+This executes all commands listed in simple_test.txt automatically.
+
+## 5.2.4 Command-Line Arguments
+The program supports the following optional command arguments:
+
+- -n num_disks: Specifies the number of data disks (default: 3). Note: The system automatically includes one additional parity disk.
+- -b block_size: Specifies the size of each block in bytes (default: 16).
+- -d disk_size: Specifies the size of each disk in bytes (default: 256).
+- -t file_name: Specifies a transaction file containing a sequence of commands.
+
+
+
+
 # 5.3 Architecture Diagram
 
 ![picture-0.png](architecture_diagram/picture-0.png)
