@@ -1,22 +1,16 @@
 # 5.1 Project Overview
-This project implements a simulation of a RAID-4 storage system at the block level.
-The system is designed to provide fault tolerance and data reliability by distributing data blocks across multiple disks and maintaining a dedicated parity disk.
+This project implements a simulation of a RAID-4 storage system at the block level. 
+It belongs to Category One — Multi-Process Application Using Pipes, and is designed to provide fault tolerance and data reliability by distributing data blocks across multiple disks and maintaining a dedicated parity disk.
 
-In this simulation, each disk is represented by a separate child process, while a central controller coordinates all operations through inter-process communication. 
+The system adopts a controller–worker architecture, where a central controller process manages multiple disk processes, each representing an individual disk. 
+The controller coordinates all operations through inter-process communication using pipes, translating high-level RAID commands into low-level disk operations.
+Each disk process operates independently and continuously listens for incoming commands such as read, write, and exit. 
+Upon receiving a request, the disk executes the corresponding operation and returns the result to the controller, ensuring consistency across the system.
+
 By supporting block-level read and write operations, parity-based recovery, and disk failure simulation, 
 the system demonstrates how redundancy, process coordination, and IPC work together to achieve reliable storage in RAID-4 architectures.
 
-## 5.1.1 System Design and Implementation
-This project belongs to Category One — Multi-Process Application Using Pipes, and is implemented using a controller–worker architecture.
-
-A central controller process manages multiple disk processes, each representing an individual disk in the RAID system. 
-The controller translates high-level RAID operations (e.g., read, write, and failure handling) into low-level disk commands 
-and communicates with each disk process through dedicated pipes.
-
-Each disk process operates independently and continuously listens for incoming commands. 
-Upon receiving a request, the disk executes the corresponding operation and returns the result to the controller. 
-
-## 5.1.2 User Interaction and Interfaces
+## 5.1.1 User Interaction and Interfaces
 The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system.
 
 It supports both: **interactive shell-like interface** and **transaction file interface**, 
@@ -24,7 +18,7 @@ allowing users to issue commands either manually or through predefined input fil
 
 The system operates on fixed-size data blocks, and all operations are performed at the block level rather than at the file system level.
 
-## 5.1.3 Core Functionality
+## 5.1.2 Core Functionality
 The RAID simulator supports core block-level operations including reads and writes, parity updates, and disk failure simulation, as follows:
 
 - **Write Block (`wb <block_num> <filename>`)**: Reads `block_size` bytes from a local file and writes the data to the specified logical block in the RAID system. 
@@ -38,7 +32,7 @@ In particular, write operations ensure consistency by updating both data and par
 When a disk failure occurs, the system can reconstruct lost data using parity information and data from the remaining disks, 
 illustrating the fault tolerance mechanism provided by RAID-4.
 
-## 5.1.4 Input and Output Behavior
+## 5.1.3 Input and Output Behavior
 Users interact with the system through command-line instructions such as `wb`, `rb`, `kill`, `status`, and `exit`.
 
 These commands can be entered interactively or provided via a transaction file.
@@ -47,7 +41,7 @@ These commands can be entered interactively or provided via a transaction file.
 
 This interaction model allows users to observe system behavior, including disk failures and subsequent data recovery.
 
-## 5.1.5 Visualization Support
+## 5.1.4 Visualization Support
 Additionally, a graphical user interface (`RAID-GUI.py`) is provided to visualize the RAID system state and user interactions.
 
 The GUI displays the RAID-4 block layout, including how data blocks are striped across disks and how parity is maintained on a dedicated disk. 
