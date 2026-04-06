@@ -7,11 +7,14 @@ By supporting block-level read and write operations, parity-based recovery, and 
 the system demonstrates how redundancy, process coordination, and IPC work together to achieve reliable storage in RAID-4 architectures.
 
 ## 5.1.1 System Design and Implementation
-The project belongs to the domain of systems programming and demonstrates key concepts such as process creation using `fork`, inter-process communication (IPC) via pipes, and low-level data management.
+This project belongs to Category One — Multi-Process Application Using Pipes, and is implemented using a controller–worker architecture.
 
-Internally, the controller communicates with disk processes through pipes, sending commands and receiving results. 
-Each disk process continuously listens for requests such as read, write, and exit, executes them, and returns responses to the controller, 
-which ensures proper coordination and consistency across the system.
+A central controller process manages multiple disk processes, each representing an individual disk in the RAID system. 
+The controller translates high-level RAID operations (e.g., read, write, and failure handling) into low-level disk commands 
+and communicates with each disk process through dedicated pipes.
+
+Each disk process operates independently and continuously listens for incoming commands. 
+Upon receiving a request, the disk executes the corresponding operation and returns the result to the controller. 
 
 ## 5.1.2 User Interaction and Interfaces
 The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system.
