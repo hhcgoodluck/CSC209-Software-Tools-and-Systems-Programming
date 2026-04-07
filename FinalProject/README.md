@@ -12,10 +12,8 @@ the system demonstrates how redundancy, process coordination, and IPC work toget
 
 ## 5.1.1 User Interaction and Interfaces
 The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system.
-
-It supports both: **interactive shell-like interface** and **transaction file interface**, 
+It supports both **interactive shell-like interface** and **transaction file interface**, 
 allowing users to issue commands either manually or through predefined input files.
-
 The system operates on fixed-size data blocks, and all operations are performed at the block level rather than at the file system level.
 
 ## 5.1.2 Core Functionality with I/O Behavior
