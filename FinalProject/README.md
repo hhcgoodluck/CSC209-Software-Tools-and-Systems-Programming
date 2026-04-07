@@ -69,12 +69,12 @@ understand how data and parity are managed during normal operation and failure s
 The project can be compiled using the provided Makefile. 
 No additional dependencies are required beyond a standard C compiler (e.g.`gcc`).
 
-### Compilation
+**Compilation**
 To build the program, run the command: `make`. 
 This command compiles all source files (raid_sim.c, controller.c, disk_sim.c) and generate executable files.
 To remove compiled files and reset the build environment: `make clean`
 
-### Input Files
+**Input Files**
 The project requires the following input files:
 
 - A transaction file (e.g.`simple_test.txt`) when using the `-t` option. This file contains a sequence of commands to be executed automatically.
@@ -82,16 +82,16 @@ The project requires the following input files:
 
 All input files must be located in the working directory before running the program.
 
-### Running the Program
+**Running the Program**
 The RAID simulator can be executed in two modes.
 
-- **Interactive Mode**: Run the program without a transaction file `./raid_sim`.
+- ***Interactive Mode***: Run the program without a transaction file `./raid_sim`.
 This starts an interactive shell where users can manually enter commands.
 
-- **Transaction File Mode**: Run the program with a predefined sequence of commands `./raid_sim -n 3 -t simple_test.txt`.
+- ***Transaction File Mode***: Run the program with a predefined sequence of commands `./raid_sim -n 3 -t simple_test.txt`.
 This executes all commands listed in simple_test.txt automatically.
 
-### Command-Line Arguments
+**Command-Line Arguments**
 The program supports the following optional command arguments:
 - -n num_disks: Specifies the number of data disks (default: 3). Note that the system automatically includes one additional parity disk.
 - -b block_size: Specifies the size of each block in bytes (default: 16).
