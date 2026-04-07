@@ -172,21 +172,12 @@ Recovery is performed stripe by stripe using the parity relation. For a failed d
 the parity block with all remaining data blocks in the same stripe. For a failed parity disk, each parity block is recomputed by XORing
 all data blocks in the stripe. This recovery logic is implemented in `restore_disk_process()`.
 
-## 5.4.5 Summary
-
-Overall, the protocol is a compact, opcode-driven binary protocol over pipes.
-Each message is self-delimiting, as the command opcode determines both the structure and length of the remaining fields.
-This design simplifies the disk processes, enables natural synchronization through blocking I/O,
-and tightly integrates failure detection into the communication layer.
-
-
-
 
 
 
 ## 5.5 Concurrency Model
 
-This project uses the Category One multi-process model, where a parent process manages multiple worker processes using pipes.
+This project uses the Category One multiprocess model, where a parent process manages multiple worker processes using pipes.
 
 **Process Creation**  
 The parent process in `controller.c` creates all disk processes during initialization in `init_all_controllers()`. It calls `init_disk(i)` for each disk, where two pipes (`to_disk` and `from_disk`) are created and `fork()` is executed. Each child process then starts execution in `start_disk()` and represents one disk.
@@ -195,7 +186,8 @@ The parent process in `controller.c` creates all disk processes during initializ
 There is no explicit ready signal. After `fork()`, each child process enters `start_disk()` and immediately waits for commands by reading from its pipe. Since the child is already blocked waiting for input, the parent can assume that all workers are ready once they have been successfully created.
 
 **Concurrent Execution**  
-All disk processes run independently as separate processes. They remain active throughout execution, while the parent coordinates disk operations through functions such as `read_block_from_disk()` and `write_block_to_disk()`.
+All disk processes execute independently as child processes. They remain active throughout execution, while the parent coordinates disk operations through functions such as `read_block_from_disk()` and `write_block_to_disk()`.
+The parent interacts with them sequentially through blocking pipe operations, while each child independently processes requests as they arrive.
 
 **Communication and Synchronization**  
 Communication is handled through pipes using `read_block_from_disk()` and `write_block_to_disk()`.
@@ -206,9 +198,6 @@ On the child side, `start_disk()` continuously reads commands from the pipe and 
 
 **Process Collection**  
 Child processes are collected in `checkpoint_and_wait()`. The parent sends `CMD_EXIT` to each disk process and then calls `wait()` once per child to ensure that all processes terminate correctly. In failure cases, `simulate_disk_failure()` uses `waitpid()` to collect a specific disk process.
-
-Overall, concurrency is achieved by maintaining multiple disk processes, while the parent process coordinates their execution through well-defined functions and pipe-based communication.
-
 
 
 
