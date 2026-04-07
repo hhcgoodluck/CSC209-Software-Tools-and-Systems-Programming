@@ -53,7 +53,7 @@ Terminal Command: `./raid_sim -n 3 -t simple_test.txt`
 This example demonstrates the fault tolerance behavior of RAID-4 system. After a disk failure (`kill 1`), the first read attempt fails and triggers recovery. 
 Subsequent reads succeed, indicating that the failed disk has been restored and data is correctly reconstructed.
 
-## 5.1.3 Visualization Support(Seen in the YouTube Display Video)
+## 5.1.3 Visualization Support (See in the YouTube Display Video)
 Additionally, a graphical user interface (`RAID-GUI.py`) is provided to visualize the RAID system state and user interactions.
 And the system operates under a fixed configuration (3 data disks, 16-byte block size, and 256-byte disk capacity)
 
@@ -215,10 +215,9 @@ Overall, concurrency is achieved by maintaining multiple disk processes, while t
 
 
 # 5.6 Error Handling and Robustness
-
-Our implementation includes explicit error checking for system calls and pipe-based communication. Since the RAID simulator is built as a multi-process application using pipes, many runtime failures can occur at the operating-system level. The controller handles these failures by checking return values, printing diagnostic messages with `perror()` or `fprintf(stderr, ...)`, closing invalid file descriptors when necessary, and returning `-1` so that the caller can stop or recover safely.
-
-Below are several examples of bad runtime behaviours and how the code handles them.
+The RAID system handles failures at multiple levels, including resource initialization, inter-process communication, data transfer, and input validation.
+By consistently checking system call return values, cleaning up resources on failure, and preventing invalid operations from propagating to disk processes,
+the design ensures that failures are detected early and handled safely.
 
 ## 5.6.1. Resource initialization failure (pipe and fork)
 
@@ -235,8 +234,6 @@ After both pipes succeed, the code calls `fork()` and checks whether the returne
 If `fork()` fails, it reports the error with `perror()`, closes all four pipe descriptors for that disk (`to_disk[0]`, `to_disk[1]`, `from_disk[0]`, and `from_disk[1]`), 
 and returns `-1` instead of continuing. Only when both pipes and `fork()` succeed does the parent store `controllers[num].pid` and keep the intended pipe ends open for normal controller–disk communication.
 
-**Why this is robust:**  
-This prevents the controller from continuing with partially created pipes or a missing child process, and it avoids leaking file descriptors during disk initialization or restart.
 
 ## 5.6.2. Writing to a closed or broken pipe
 
@@ -252,10 +249,6 @@ Instead, `write()` returns `-1`, which is checked in both `read_block_from_disk(
 When such a failure is detected, the code immediately calls `restore_disk_process(disk_num)` to restart the failed disk process and reconstruct its data using RAID-4 parity recovery. 
 The function then returns an error to signal that the current operation did not complete successfully.
 
-**Why this is robust:**  
-This approach converts a potentially fatal runtime error (broken pipe) into a recoverable event. 
-By combining signal handling, explicit error detection, and automatic disk restoration, 
-the system avoids crashing and maintains data consistency even when a disk process fails.
 
 ## 5.6.3. Malformed or incomplete command over a pipe
 
@@ -271,10 +264,6 @@ If the read is incomplete, reaches EOF, or fails, the disk reports an error and 
 If a full command is received, the code validates it using a `switch(cmd)` statement. 
 Any unrecognized command is handled in the `default` branch, which reports an "Unknown command" error and terminates the request loop safely.
 
-**Why this is robust:**  
-This approach ensures that the disk process never executes a partially received or invalid command. 
-By validating both the completeness of the data (via `read_full()`) and 
-the correctness of the command value (via `switch(cmd)`), the system prevents undefined behavior and fails safely when the controller–disk communication protocol is violated.
 
 ## 5.6.4. Partial or failed transfer of block data over a pipe
 
@@ -289,8 +278,6 @@ If `read()` returns `<= 0`, it reports an error and returns `-1`.
 Function `write_block_to_disk()` uses the same strategy for block data writes, it loops until `bytes_written_total` reaches `block_size`, and if `write()` fails, 
 it reports the error and returns `-1` (calling `restore_disk_process(disk_num)` when `write()` returns `-1`).
 
-**Why this is robust:**
-This ensures that only complete blocks of size `block_size` are processed, preventing partial transfers from being treated as valid data.
 
 ## 5.6.5. Invalid logical block number supplied to a RAID operation
 
@@ -307,15 +294,6 @@ If the value is invalid, the code logs an error (`"Invalid logical block number 
 and immediately returns without sending any command to a disk process. 
 As a result, no invalid disk index, stripe calculation, or pipe communication is performed for an out-of-range request.
 
-**Why this is robust:**  
-This prevents malformed RAID requests from propagating into the controller–disk communication layer. 
-By rejecting invalid logical block numbers early, the code avoids incorrect disk selection, invalid stripe offsets, and unnecessary child-process communication.
-
-## 5.6 Conclusion
-
-The RAID system handles failures at multiple levels, including resource initialization, inter-process communication, data transfer, and input validation. 
-By consistently checking system call return values, cleaning up resources on failure, and preventing invalid operations from propagating to disk processes, 
-the design ensures that failures are detected early and handled safely. 
 
 # 5.7 Project Contributions
 
