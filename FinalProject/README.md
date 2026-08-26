@@ -1,4 +1,4 @@
-# 5.1 Project Overview
+# Project Overview
 This project implements a simulation of a RAID-4 storage system at the block level. 
 It belongs to Category One — Multi-Process Application Using Pipes, and is designed to provide fault tolerance and data reliability by distributing data blocks across multiple disks and maintaining a dedicated parity disk.
 
@@ -10,13 +10,13 @@ Upon receiving a request, the disk executes the corresponding operation and retu
 By supporting block-level read and write operations, parity-based recovery, and disk failure simulation, 
 the system demonstrates how redundancy, process coordination, and IPC work together to achieve reliable storage in RAID-4 architectures.
 
-## 5.1.1 User Interaction and Interfaces
+## 1.1 User Interaction and Interfaces
 The main program (`raid_sim.c`) provides an interface for users to interact with the RAID system.
 It supports both **interactive shell-like interface** and **transaction file interface**, 
 allowing users to issue commands either manually or through predefined input files.
 The system operates on fixed-size data blocks, and all operations are performed at the block level rather than at the file system level.
 
-## 5.1.2 Core Functionality with I/O Behavior
+## 1.2 Core Functionality with I/O Behavior
 The RAID simulator supports core block-level operations including reads and writes, parity updates, and disk failure simulation, as follows:
 
 - **Write Block (`wb <block_num> <filename>`)**: Reads `block_size` bytes from a local file and writes the data to the specified logical block in the RAID system. 
@@ -51,7 +51,7 @@ Terminal Command: `./raid_sim -n 3 -t simple_test.txt`
 This example demonstrates the fault tolerance behavior of RAID-4 system. After a disk failure (`kill 1`), the first read attempt fails and triggers recovery. 
 Subsequent reads succeed, indicating that the failed disk has been restored and data is correctly reconstructed.
 
-## 5.1.3 Visualization Support (See in the YouTube Display Video)
+## 1.3 Visualization Support (See in the YouTube Display Video)
 Additionally, a graphical user interface (`RAID-GUI.py`) is provided to visualize the RAID system state and user interactions.
 And the system operates under a fixed configuration (3 data disks, 16-byte block size, and 256-byte disk capacity)
 
@@ -63,7 +63,7 @@ understand how data and parity are managed during normal operation and failure s
 
 
 
-# 5.2 Build Instructions
+# 2 Build Instructions
 The project can be compiled using the provided Makefile. 
 No additional dependencies are required beyond a standard C compiler (e.g.`gcc`).
 
@@ -99,7 +99,7 @@ The program supports the following optional command arguments:
 
 
 
-# 5.3 Architecture Diagram
+# 3 Architecture Diagram
 
 ![picture-0.png](architecture_diagram/picture-0.png)
 
@@ -109,7 +109,7 @@ The program supports the following optional command arguments:
 
 
 
-# 5.4 Communication Protocol
+# 4 Communication Protocol
 
 Communication between the RAID controller (parent process) and each disk process (child process) is implemented using two dedicated pipes per disk.
 For disk `i`, the controller sends requests through `controllers[i].to_disk[1]` and receives responses from `controllers[i].from_disk[0]`, while the child uses the corresponding opposite ends.
@@ -117,7 +117,7 @@ For disk `i`, the controller sends requests through `controllers[i].to_disk[1]` 
 The system supports three disk-level commands: `CMD_READ`, `CMD_WRITE`, and `CMD_EXIT`.
 These commands are issued by the controller in response to higher-level RAID operations such as `rb`, `wb`, `kill`, and `exit`.
 
-## 5.4.1 Message Type: Read Request
+## 4.1 Message Type: Read Request
 
 | Field | Description |
 |---|---|
@@ -131,7 +131,7 @@ In the implementation, the controller does **not** send a variable-length messag
 Instead, it sends the message as a small protocol sequence: command opcode first, then block number, then waits for a fixed-size reply. 
 This makes it clear to the receiver how many bytes to read and in what order.
 
-## 5.4.2 Message Type: Write Request
+## 4.2 Message Type: Write Request
 
 | Field                   | Description                                                                                                                                                                                                                                                                                                                                                                                                               |
 |-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -147,7 +147,7 @@ which first reads the old data block and old parity block, computes `new_parity 
 writes the updated parity block, and then writes the new data block. 
 Thus, the protocol seen by the child remains a simple block-write protocol.
 
-## 5.4.3 Message Type: Exit / Checkpoint Request
+## 4.3 Message Type: Exit / Checkpoint Request
 
 | Field | Description |
 |---|---|
@@ -159,7 +159,7 @@ Thus, the protocol seen by the child remains a simple block-write protocol.
 
 At the user level, the `exit` command causes the controller to send `CMD_EXIT` to all disk processes and wait for their termination.
 
-## 5.4.4 Failure-Triggered Recovery as Part of the Protocol
+## 4.4 Failure-Triggered Recovery as Part of the Protocol
 
 Although disk recovery is not encoded as a separate pipe message type, it is an integral part of the communication protocol.
 In this design, communication failure is used as the mechanism for detecting disk failure.
@@ -175,7 +175,7 @@ all data blocks in the stripe. This recovery logic is implemented in `restore_di
 
 
 
-## 5.5 Concurrency Model
+## 5 Concurrency Model
 
 This project uses the Category One multiprocess model, where a parent process manages multiple worker processes using pipes.
 
@@ -201,12 +201,12 @@ Child processes are collected in `checkpoint_and_wait()`. The parent sends `CMD_
 
 
 
-# 5.6 Error Handling and Robustness
+# 6 Error Handling and Robustness
 The RAID system handles failures at multiple levels, including resource initialization, inter-process communication, data transfer, and input validation.
 By consistently checking system call return values, cleaning up resources on failure, and preventing invalid operations from propagating to disk processes,
 the design ensures that failures are detected early and handled safely.
 
-## 5.6.1. Resource initialization failure (pipe and fork)
+## 6.1. Resource initialization failure (pipe and fork)
 
 **Bad behaviour:**  
 A system call used to create a disk process may fail while the controller is setting up or recreating a disk. 
@@ -222,7 +222,7 @@ If `fork()` fails, it reports the error with `perror()`, closes all four pipe de
 and returns `-1` instead of continuing. Only when both pipes and `fork()` succeed does the parent store `controllers[num].pid` and keep the intended pipe ends open for normal controller–disk communication.
 
 
-## 5.6.2. Writing to a closed or broken pipe
+## 6.2. Writing to a closed or broken pipe
 
 **Bad behaviour:**  
 After a disk process is terminated (via `simulate_disk_failure()`), 
@@ -237,7 +237,7 @@ When such a failure is detected, the code immediately calls `restore_disk_proces
 The function then returns an error to signal that the current operation did not complete successfully.
 
 
-## 5.6.3. Malformed or incomplete command over a pipe
+## 6.3. Malformed or incomplete command over a pipe
 
 **Bad behaviour:**  
 A disk process may receive a malformed command from the controller. 
@@ -252,7 +252,7 @@ If a full command is received, the code validates it using a `switch(cmd)` state
 Any unrecognized command is handled in the `default` branch, which reports an "Unknown command" error and terminates the request loop safely.
 
 
-## 5.6.4. Partial or failed transfer of block data over a pipe
+## 6.4. Partial or failed transfer of block data over a pipe
 
 **Bad behaviour:**  
 Even when a disk process is still running and the command itself is valid, a full RAID block may not be transferred in a single `read()` or `write()` call. 
@@ -266,7 +266,7 @@ Function `write_block_to_disk()` uses the same strategy for block data writes, i
 it reports the error and returns `-1` (calling `restore_disk_process(disk_num)` when `write()` returns `-1`).
 
 
-## 5.6.5. Invalid logical block number supplied to a RAID operation
+## 6.5. Invalid logical block number supplied to a RAID operation
 
 **Bad behaviour:**  
 A caller may request a read or write using a logical block number outside the valid RAID data range. 
@@ -282,6 +282,6 @@ and immediately returns without sending any command to a disk process.
 As a result, no invalid disk index, stripe calculation, or pipe communication is performed for an out-of-range request.
 
 
-# 5.7 Project Contributions
+# 7 Project Contributions
 
 This project was completed individually. All core system design, implementation, testing, and documentation were carried out by the author.
